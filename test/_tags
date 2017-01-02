@@ -1,0 +1,29 @@
+# OASIS_START
+# DO NOT EDIT (digest: 46fad976d105362c6501b4d1389d7c6c)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Executable test3
+"test3.byte": pkg_ocaml-rocksdb
+"test3.byte": pkg_threads
+"test3.byte": custom
+# Executable rocks_tests
+"rocks_tests.byte": pkg_oUnit
+"rocks_tests.byte": pkg_ocaml-rocksdb
+"rocks_tests.byte": pkg_threads
+<*.ml{,i,y}>: pkg_oUnit
+<*.ml{,i,y}>: pkg_ocaml-rocksdb
+<*.ml{,i,y}>: pkg_threads
+"rocks_tests.byte": custom
+# OASIS_STOP
