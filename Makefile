@@ -25,9 +25,9 @@ RESULT_PACKAGE=ocaml-rocksdb
 
 CXXFLAGS += -g -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=gnu++11
 
-PACKS = utils,threads
+PACKS = threads
 
-ML= rocks_types.ml $(RESULT).ml rocks.ml
+ML= misc.ml rocks_types.ml $(RESULT).ml rocks.ml
 CMO= $(patsubst %.ml,%.cmo, $(ML))
 CMX= $(patsubst %.ml,%.cmx, $(ML))
 CMI= $(patsubst %.ml,%.cmi, $(ML))

@@ -1,0 +1,11 @@
+*.so
+*.o
+*.cm*
+META
+*.byte
+setup.data
+setup.log
+*.a
+test/_build
+ocaml_rocksdb.ml
+ocaml_rocksdb_stubs.cc
