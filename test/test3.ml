@@ -11,7 +11,7 @@ List.iter (fun s -> Printf.printf "%s\n" s) l ;
 flush stdout ;
 let cmp = Cmp.myrocks in
 let cfoptions = CFOptions.create ~cmp () in
-let cfds = List.map (fun n -> CFD.create n ~opts:cfoptions ()) l in
+let cfds = List.map (fun n -> (n, cfoptions)) l in
 let dbh = DB.opendb ~opts:options ~cfds path in
 
 Printf.fprintf stderr "yeah, dbh\n" ;

@@ -50,7 +50,7 @@ let all = "all_tests" >:::
 	let dboptions = DBOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
 	let dbh = DB.opendb ~opts:dboptions
-	  ~cfds:[CFD.create "default" ()]
+	  ~cfds:["default", CFOptions.create()]
 	  "/tmp/rocks_tests/aname-missing-ok-default-column-family" in
 	()
       ) ;

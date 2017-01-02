@@ -131,22 +131,6 @@ module WOptions = struct
   let create = C.create
 end
   
-module CFD = struct
-  module C = GCBox(struct
-    let name = "cfdescriptor_id"
-    type _t = cfdescriptor_id
-    type args = string * CFOptions.t
-    let create_no_gc (name, opts) = rocksdb_cfdescriptor_create name opts.CFOptions.it
-    let destroy it = rocksdb_cfdescriptor_destroy it
-  end)
-  include C
-
-  let create name ?opts () =
-    let options = match opts with Some o -> o | None ->
-      CFOptions.create() in
-    C.create (name, options)
-end
-
 let list_column_families ?opts name =
   let options = match opts with None -> DBOptions.create() | Some o -> o in
   rocksdb_list_column_families options.it name
@@ -224,6 +208,7 @@ module DB = struct
 
   let _opendb_no_gc (opts, cfds, name) =
     let options = match opts with None -> DBOptions.create() | Some o -> o in
+    let cfoptions = CFOptions.create () in
     let cfds =
       match cfds with Some a -> a
       | None -> begin
@@ -231,8 +216,8 @@ module DB = struct
 	  list_column_families ~opts:options name
 	with Failure _ -> []
       end
-      |>  List.map (fun n -> CFD.create n ()) in
-    let cfds = Array.of_list (List.map CFD.it cfds) in
+      |>  List.map (fun n -> (n, cfoptions)) in
+    let cfds = Array.of_list (List.map (fun (n, o) -> (n, o.CFOptions.it)) cfds) in
     rocksdb_open_column_families options.it name cfds
     |> status3_to_result |> error_to_failure ~msg:"rocksdb_open_column_families"
     |> (function cfds, None -> failwith "rocksdb_open_column_families: OK status, but no dbh!"
@@ -247,7 +232,7 @@ module DB = struct
   module C = GCBox(struct
     let name = "full db handle"
     type _t = dbh
-    type args = DBOptions.t option * CFD.t list option * string
+    type args = DBOptions.t option * (string * CFOptions.t) list option * string
     let create_no_gc = _opendb_no_gc
     let destroy = destroy
   end)

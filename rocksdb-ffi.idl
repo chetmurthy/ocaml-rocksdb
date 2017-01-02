@@ -83,26 +83,21 @@ open Rocks_types
    (ML2CPP (ID woptions_id) "ml2c_owned_pointer(_mlvalue, _cvaluep);")
 
    (TYPEDEF
-    ((mltype (GEN cfdescriptor_id))
-     (cpptype (PTR (ID rocksdb::ColumnFamilyDescriptor)))
-     (name cfdescriptor_id)))
-   (CPP2ML (ID cfdescriptor_id) "_mlvalue = c2ml_owned_pointer(_cvalue);")
-   (ML2CPP (ID cfdescriptor_id) "ml2c_owned_pointer(_mlvalue, _cvaluep);")
-
-   (TYPEDEF
     ((mltype (GEN comparator_id)) (cpptype (PTR (ID rocksdb::Comparator)))
      (name comparator_id)))
    (CPP2ML (ID comparator_id) "_mlvalue = c2ml_owned_pointer(_cvalue);")
    (ML2CPP (ID comparator_id) "ml2c_owned_pointer(_mlvalue, _cvaluep);")
 
    (TYPEDEF
-    ((name in_cfds)
-     (mltype (EXP "cfdescriptor_id array"))
-     (cpptype (TYCON "std::vector" ((ID rocksdb::ColumnFamilyDescriptor))))))
-   (ML2CPP (ID rocksdb::ColumnFamilyDescriptor)
-     "cfdescriptor_id cfd_id ;
-  ml2c(_mlvalue, &cfd_id) ;
-  *_cvaluep = *cfd_id ;")
+    ((name cfd)
+     (mltype (EXP "(string * cfoptions_id)"))
+     (cpptype (ID rocksdb::ColumnFamilyDescriptor))))
+   (ML2CPP (ID cfd)
+     "
+  std::tuple<std::string, cfoptions_id> tmp;
+  ml2c(_mlvalue, &tmp) ;
+  *_cvaluep = rocksdb::ColumnFamilyDescriptor(std::get<0>(tmp), *(std::get<1>(tmp))) ;
+")
 
    (CPP
      "
@@ -199,18 +194,6 @@ std::string demarsh_state(const char *state) {
     "opth->comparator = cmp;"
     )
 
-   (FOREIGN ((ID cfdescriptor_id))
-    rocksdb_cfdescriptor_create
-    (((ID std::string) name) ((ID cfoptions_id) opth))
-     "_res0 = new rocksdb::ColumnFamilyDescriptor(name, *opth) ;")
-
-   (FOREIGN () rocksdb_cfdescriptor_destroy (((ID cfdescriptor_id) cfdh))
-     "if (NULL != cfdh) {
-    delete cfdh ;
-    ml2c_set_owned_pointer<cfdescriptor_id>(_mlv_cfdh, NULL);
-  }
-")
-
    (FOREIGN ((ID options_id)) rocksdb_options_create ()
      "_res0 = new rocksdb::Options() ;")
 
@@ -235,7 +218,7 @@ std::string demarsh_state(const char *state) {
    (FOREIGN
     ((ID status) (TYCON std::vector ((ID cfhandle_id))) (ID db_id_opt))
     rocksdb_open_column_families
-    (((ID dboptions_id) opth) ((ID std::string) name) ((ID in_cfds) cfds))
+    (((ID dboptions_id) opth) ((ID std::string) name) ((TYCON std::vector ((ID cfd))) cfds))
     "rocksdb::DB *out_dbptr = NULL;
   _res0 = rocksdb::DB::Open(*opth, name, cfds, &_res1, &out_dbptr);
   if (!_res0.ok()) { _res1.clear() ; out_dbptr = NULL ; }
