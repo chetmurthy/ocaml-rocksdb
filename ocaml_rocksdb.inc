@@ -98,8 +98,8 @@ class Rdb_pk_comparator : public rocksdb::Comparator
 
 }  // namespace myrocks
 
-#define extract_dboptions_t_DEFINED
-struct extract_dboptions_t {
+#define dboptions_t_DEFINED
+struct dboptions_t {
   bool create_if_missing ;
   bool create_missing_column_families ;
   bool error_if_exists ;
@@ -157,8 +157,8 @@ struct extract_dboptions_t {
   bool dump_malloc_stats ;
   bool avoid_flush_during_recovery ;
   bool avoid_flush_during_shutdown ;
-  extract_dboptions_t() {}
-  extract_dboptions_t(const rocksdb::DBOptions &opts) : 
+  dboptions_t() {}
+  dboptions_t(const rocksdb::DBOptions &opts) : 
  create_if_missing(opts.create_if_missing),
 create_missing_column_families(opts.create_missing_column_families),
 error_if_exists(opts.error_if_exists),

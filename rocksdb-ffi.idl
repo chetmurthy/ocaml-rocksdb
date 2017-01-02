@@ -409,7 +409,8 @@ std::string demarsh_state(const char *state) {
      "_res0 = dbh->Get(*opth, cfh, key, &_res1) ;")
 
     (STRUCT
-     ((name extract_dboptions)
+     ((modname DBOptionsST)
+      (name dboptions)
       (members
        (
 	((PRIM BOOL) create_if_missing)
@@ -471,10 +472,10 @@ std::string demarsh_state(const char *state) {
 	((PRIM BOOL) avoid_flush_during_shutdown)
 	))))
 
-    (FOREIGN ((ID extract_dboptions))
-     rocksdb_extract_dboptions
+    (FOREIGN ((ID dboptions))
+     rocksdb_export_dboptions
      (((ID dboptions_id) opth))
-     " _res0 = extract_dboptions(*opth) ;"
+     " _res0 = dboptions_t(*opth) ;"
      )
 
    )

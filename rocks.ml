@@ -1,6 +1,7 @@
 open Misc
 open Rocks_types
 open Ocaml_rocksdb
+open Ocaml_rocksdb.Types
 
 module GCBox(T : sig
   type args
@@ -66,6 +67,9 @@ module DBOptions = struct
 
   let get_create_if_missing options =
     rocksdb_dboptions_id_get_create_if_missing options.it
+
+  let export options =
+    rocksdb_export_dboptions options.it
 end
 
 module Cmp = struct

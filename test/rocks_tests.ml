@@ -14,7 +14,7 @@ let all = "all_tests" >:::
       (fun ctxt ->
 	let opts = DBOptions.create ~gc:false () in
 	DBOptions.destroy opts ;
-	assert_raises (Assert_failure("rocks.ml",20,26))
+	assert_raises (Assert_failure("rocks.ml",21,26))
 	(fun () -> DBOptions.destroy opts) ;
       ) ;
     "double-free-gc" >::
@@ -30,8 +30,10 @@ let all = "all_tests" >:::
       (fun ctxt ->
 	let dboptions = DBOptions.create() in
 	assert_bool "better be false" (not (DBOptions.get_create_if_missing dboptions)) ;
+	assert_bool "better be false (2)" (not (DBOptions.export dboptions).create_if_missing) ;
 	DBOptions.set_create_if_missing dboptions true ;
 	assert_bool "better be true" (DBOptions.get_create_if_missing dboptions) ;
+	assert_bool "better be true (2)" (DBOptions.export dboptions).create_if_missing ;
       ) ;
     "open-create-missing-fails" >::
       (fun ctxt ->
