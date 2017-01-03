@@ -353,9 +353,9 @@ module DB = struct
     cfhs : (string, cfhandle_id) Hashtbl.t ;
   }
 
-  let _opendb_no_gc (readonly, error_if_log_file_exist, opts, cfds, name) =
+  let _opendb_no_gc (readonly, error_if_log_file_exist, opts, cfopts, cfds, name) =
     let options = DBOptions.unopt opts in
-    let cfoptions = CFOptions.create () in
+    let cfoptions = CFOptions.unopt cfopts in
     let cfds =
       match cfds with Some a -> a
       | None -> begin
@@ -386,16 +386,16 @@ module DB = struct
   module C = GCBox(struct
     let name = "full db handle"
     type _t = dbh
-    type args = bool * bool * DBOptions.t option * (string * CFOptions.t) list option * string
+    type args = bool * bool * DBOptions.t option * CFOptions.t option * (string * CFOptions.t) list option * string
     let create_no_gc = _opendb_no_gc
     let destroy = destroy
   end)
   include C
-  let opendb ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfds ?(gc=true) name =
-    C.create ~gc (readonly, error_if_log_file_exist, opts, cfds, name)
+  let opendb ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfopts ?cfds ?(gc=true) name =
+    C.create ~gc (readonly, error_if_log_file_exist, opts, cfopts, cfds, name)
 
-  let with_db ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfds name ~f =
-    let dbh = C.create ~gc:false (readonly, error_if_log_file_exist, opts, cfds, name) in
+  let with_db ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfopts ?cfds name ~f =
+    let dbh = C.create ~gc:false (readonly, error_if_log_file_exist, opts, cfopts, cfds, name) in
     protect ~f:(fun () -> f dbh)
       ~finally:(fun () -> destroy dbh)
 

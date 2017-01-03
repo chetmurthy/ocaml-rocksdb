@@ -117,10 +117,12 @@ module DB : sig
   include GCABLE
   val opendb : ?readonly:bool ->
            ?error_if_log_file_exist:bool ->
-           ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> ?gc:bool -> string -> t
+           ?opts:DBOptions.t -> ?cfopts:CFOptions.t ->
+           ?cfds:(string * CFOptions.t) list -> ?gc:bool -> string -> t
   val with_db : ?readonly:bool ->
            ?error_if_log_file_exist:bool ->
-           ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> string -> f:(t -> 'a) -> 'a
+           ?opts:DBOptions.t -> ?cfopts:CFOptions.t ->
+           ?cfds:(string * CFOptions.t) list -> string -> f:(t -> 'a) -> 'a
   val cfh : t -> string -> CFH.t
   val create_cf : t -> ?opts:CFOptions.t -> string -> unit
   val drop_cf : t -> string -> unit
