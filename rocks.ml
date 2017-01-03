@@ -44,6 +44,11 @@ module Options = struct
     let destroy it = rocksdb_options_destroy it
   end)
   include C
+
+  let default = create()
+  let unopt = function
+    | None -> default
+    | Some o -> o
   
   let set_create_if_missing options b =
     rocksdb_options_id_set_create_if_missing options.it b
@@ -61,6 +66,11 @@ module DBOptions = struct
     let destroy it = rocksdb_dboptions_destroy it
   end)
   include C
+
+  let default = create()
+  let unopt = function
+    | None -> default
+    | Some o -> o
 
   let set_create_if_missing options b =
     rocksdb_dboptions_id_set_create_if_missing options.it b
@@ -100,6 +110,11 @@ module CFOptions = struct
   end)
   include C
 
+  let default = create()
+  let unopt = function
+    | None -> default
+    | Some o -> o
+
   let set_comparator opts cmp =
     rocksdb_cfoptions_set_comparator opts.it cmp
 
@@ -119,7 +134,10 @@ module ROptions = struct
   end)
   include C
 
-  let create = C.create
+  let default = create()
+  let unopt = function
+    | None -> default
+    | Some o -> o
 end
 
 module WOptions = struct
@@ -132,11 +150,14 @@ module WOptions = struct
   end)
   include C
 
-  let create = C.create
+  let default = create()
+  let unopt = function
+    | None -> default
+    | Some o -> o
 end
   
 let list_column_families ?opts name =
-  let options = match opts with None -> DBOptions.create() | Some o -> o in
+  let options = DBOptions.unopt opts in
   rocksdb_list_column_families options.it name
   |> status2_to_result
   |> error_to_failure ~msg:"rocksdb_list_column_families"
@@ -178,7 +199,7 @@ end
 module DB0 = struct
 
   let _opendb_no_gc (opts, name) =
-    let options = match opts with None -> Options.create() | Some o -> o in
+    let options = Options.unopt opts in
     rocksdb_open options.it name
     |> status2_to_result |> error_to_failure ~msg:"rocksdb_open"
     |> none_to_failure ~msg:"rocksdb_open"
@@ -195,23 +216,36 @@ module DB0 = struct
   include C
   let opendb ?opts ?(gc=true) name = C.create ~gc (opts, name)
 
-  let write dbh wopts wb =
+  let write dbh ?wopts wb =
+    let wopts = WOptions.unopt wopts in
     rocksdb_write dbh.it wopts.WOptions.it wb.WriteBatch.it
     |> status_to_result |> error_to_failure ~msg:"rocksdb_write"
 
-  let get dbh ropts key =
+  let get dbh ?ropts key =
+    let ropts = ROptions.unopt ropts in
     rocksdb_get dbh.it ropts.ROptions.it key
+    |> status2_raise_not_found
     |> status2_to_result |> error_to_failure ~msg:"rocksdb_get"
+
+  let put dbh ?wopts key v =
+    let wopts = WOptions.unopt wopts in
+    rocksdb_put dbh.it wopts.WOptions.it key v
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_put"
+
+  let delete dbh ?wopts key =
+    let wopts = WOptions.unopt wopts in
+    rocksdb_delete dbh.it wopts.WOptions.it key
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_delete"
 end
 
 module DB = struct
   type dbh = {
     dbh : db_id ;
-    cfhs : cfhandle_id list ;
+    cfhs : (string, cfhandle_id) Hashtbl.t ;
   }
 
   let _opendb_no_gc (opts, cfds, name) =
-    let options = match opts with None -> DBOptions.create() | Some o -> o in
+    let options = DBOptions.unopt opts in
     let cfoptions = CFOptions.create () in
     let cfds =
       match cfds with Some a -> a
@@ -221,16 +255,20 @@ module DB = struct
 	with Failure _ -> []
       end
       |>  List.map (fun n -> (n, cfoptions)) in
-    let cfds = Array.of_list (List.map (fun (n, o) -> (n, o.CFOptions.it)) cfds) in
-    rocksdb_open_column_families options.it name cfds
+    let cfds = List.map (fun (n, o) -> (n, o.CFOptions.it)) cfds in
+    rocksdb_open_column_families options.it name (Array.of_list  cfds)
     |> status3_to_result |> error_to_failure ~msg:"rocksdb_open_column_families"
     |> (function cfds, None -> failwith "rocksdb_open_column_families: OK status, but no dbh!"
-      | (cfhs, Some dbh) -> {cfhs = Array.to_list cfhs ; dbh})
+      | (cfhs, Some dbh) ->
+	 let cfhs_tbl = Hashtbl.create 5 in
+	 List.iter2 (fun (n, _) cfh -> Hashtbl.add cfhs_tbl n cfh)
+	   cfds (Array.to_list cfhs) ;
+	 {cfhs = cfhs_tbl ; dbh})
 
   let destroy it =
-    let destroy1 cfh =
+    let destroy1 _ cfh =
       CFH.destroy it.dbh cfh in
-    List.iter destroy1 it.cfhs ;
+    Hashtbl.iter destroy1 it.cfhs ;
     rocksdb_db_destroy it.dbh
 
   module C = GCBox(struct
@@ -262,9 +300,7 @@ module Iterator = struct
     type _t = iterator_id
     type args = DB.t * ROptions.t option
     let create_no_gc (dbh,ropts) =
-      let readoptions = match ropts with
-	| None -> ROptions.create()
-	| Some o -> o in
+      let readoptions = ROptions.unopt ropts in
       rocksdb_iterator_create dbh.DB.it.DB.dbh readoptions.ROptions.it
     let destroy it = rocksdb_iterator_destroy it
   end)
