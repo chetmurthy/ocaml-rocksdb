@@ -224,6 +224,23 @@ std::string demarsh_state(const char *state) {
 ")
 
    (FOREIGN
+    ((ID status) (ID cfhandle_id))
+    rocksdb_create_column_family
+    (((ID db_id) dbh) ((ID cfoptions_id) opth) ((ID std::string) name))
+    "
+  _res0 = dbh->CreateColumnFamily(*opth, name, &_res1);
+  if (!_res0.ok()) { _res1 = NULL ; }
+")
+
+   (FOREIGN
+    ((ID status))
+    rocksdb_drop_column_family
+    (((ID db_id) dbh) ( (ID cfhandle_id) cfh))
+    "
+  _res0 = dbh->DropColumnFamily(cfh);
+")
+
+   (FOREIGN
     ((ID status))
     rocksdb_cfhandle_destroy
     (((ID db_id) dbh) ((ID cfhandle_id) cfh))

@@ -281,17 +281,66 @@ module DB = struct
   include C
   let opendb ?opts ?cfds ?(gc=true) name = C.create ~gc (opts, cfds, name)
 
-  let write dbh wopts wb =
+  let cfh dbh cfname = Hashtbl.find dbh.it.cfhs cfname
+
+  let _create_cf dbh opts cfname =
+    let opts = CFOptions.unopt opts in
+    rocksdb_create_column_family dbh.it.dbh opts.CFOptions.it cfname
+    |> status2_to_result
+    |> error_to_failure ~msg:"rocksdb_create_column_family"
+
+  let create_cf dbh ?opts cfname =
+    let cfh = _create_cf dbh opts cfname in
+    Hashtbl.add dbh.it.cfhs cfname cfh
+  let _drop_cf dbh cfh =
+    rocksdb_drop_column_family dbh.it.dbh cfh
+    |> status_to_result
+    |> error_to_failure ~msg:"rocksdb_drop_column_family"
+
+  let drop_cf dbh cfname =
+    let cfh = cfh dbh cfname in
+    _drop_cf dbh cfh ;
+    Hashtbl.remove dbh.it.cfhs cfname
+
+  let write dbh ?wopts wb =
+    let wopts = WOptions.unopt wopts in
     rocksdb_write dbh.it.dbh wopts.WOptions.it wb.WriteBatch.it
     |> status_to_result |> error_to_failure ~msg:"rocksdb_write"
 
-  let get dbh ropts key =
+  let get dbh ?ropts key =
+    let ropts = ROptions.unopt ropts in
     rocksdb_get dbh.it.dbh ropts.ROptions.it key
+    |> status2_raise_not_found
     |> status2_to_result |> error_to_failure ~msg:"rocksdb_get"
 
-  let cf_get dbh ropts cfh key =
+  let cf_get dbh ?ropts ~cfname key =
+    let ropts = ROptions.unopt ropts in
+    let cfh = cfh dbh cfname in
     rocksdb_cf_get dbh.it.dbh ropts.ROptions.it cfh key
-    |> status2_to_result |> error_to_failure ~msg:"rocksdb_get"
+    |> status2_raise_not_found
+    |> status2_to_result |> error_to_failure ~msg:"rocksdb_cf_get"
+
+  let put dbh ?wopts key v =
+    let wopts = WOptions.unopt wopts in
+    rocksdb_put dbh.it.dbh wopts.WOptions.it key v
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_put"
+
+  let cf_put dbh ?wopts ~cfname key v =
+    let wopts = WOptions.unopt wopts in
+    let cfh = cfh dbh cfname in
+    rocksdb_cf_put dbh.it.dbh wopts.WOptions.it cfh key v
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_cf_put"
+
+  let delete dbh ?wopts key =
+    let wopts = WOptions.unopt wopts in
+    rocksdb_delete dbh.it.dbh wopts.WOptions.it key
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_delete"
+
+  let cf_delete dbh ?wopts ~cfname key =
+    let wopts = WOptions.unopt wopts in
+    let cfh = cfh dbh cfname in
+    rocksdb_cf_delete dbh.it.dbh wopts.WOptions.it cfh key
+    |> status_to_result |> error_to_failure ~msg:"rocksdb_cf_delete"
 end
 
 module Iterator = struct

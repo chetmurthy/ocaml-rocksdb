@@ -3,6 +3,8 @@
 open OUnit2
 open Rocks
 
+let canon l = List.sort Pervasives.compare l
+
 let all = "all_tests" >:::
   [
     "single-free" >::
@@ -25,6 +27,11 @@ let all = "all_tests" >:::
 	DBOptions.destroy opts ;
 	let n_double_frees1 = !DBOptions.double_frees in
 	assert_equal n_double_frees1 (1 + n_double_frees0) ;
+      ) ;
+    "list-0" >::
+      (fun ctxt ->
+	assert_raises (Failure "rocksdb_list_column_families: <IOError, None, \"/tmp/CURRENT: No such file or directory\">\n")
+	  (fun () -> list_column_families "/tmp") ;
       ) ;
     "dboptions-attr" >::
       (fun ctxt ->
@@ -63,11 +70,11 @@ let all = "all_tests" >:::
 	let dbh = DB0.opendb ~opts:options "/tmp/rocks_tests/aname-missing-ok-simple" in
 	()
       ) ;
-    "insert-get" >::
+    "insert-get-0" >::
       (fun ctxt ->
 	let options = Options.create() in
 	Options.set_create_if_missing options true ;
-	let dbh = DB0.opendb ~opts:options "/tmp/rocks_tests/aname-insert-et"  in
+	let dbh = DB0.opendb ~opts:options "/tmp/rocks_tests/aname-insert-get-0"  in
 	assert_raises Not_found
 	  (fun () -> DB0.get dbh "foo") ;
 	DB0.delete dbh "foo" ;
@@ -76,6 +83,79 @@ let all = "all_tests" >:::
 	DB0.delete dbh "foo" ;
 	assert_raises Not_found
 	  (fun () -> DB0.get dbh "foo") ;
+	()
+      ) ;
+    "insert-get-1" >::
+      (fun ctxt ->
+	let dboptions = DBOptions.create() in
+	let cfoptions = CFOptions.create() in
+	DBOptions.set_create_if_missing dboptions true ;
+	let cfname = "default" in
+	let dbh = DB.opendb ~opts:dboptions
+	  ~cfds:[cfname,cfoptions]
+	  "/tmp/rocks_tests/aname-insert-get-1"  in
+	assert_raises Not_found
+	  (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	DB.cf_delete dbh ~cfname "foo" ;
+	DB.cf_put dbh ~cfname "foo" "bar" ;
+	assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
+	DB.cf_delete dbh ~cfname "foo" ;
+	assert_raises Not_found
+	  (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	()
+      ) ;
+    "cf-0" >::
+      (fun ctxt ->
+	let dboptions = DBOptions.create() in
+	let cfoptions = CFOptions.create() in
+	DBOptions.set_create_if_missing dboptions true ;
+	let cfname0 = "default" in
+	let cfname1 = "cf1" in
+	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, \"Column family not found: : cf1\">\n")
+	(fun () -> DB.opendb ~opts:dboptions
+	  ~cfds:[cfname0, cfoptions; cfname1, cfoptions]
+	  "/tmp/rocks_tests/aname-cf-0") ;
+	()
+      ) ;
+    "cf-1" >::
+      (fun ctxt ->
+	let path = "/tmp/rocks_tests/aname-cf-1" in
+	let dboptions = DBOptions.create() in
+	let cfoptions = CFOptions.create() in
+	DBOptions.set_create_if_missing dboptions true ;
+	let cfname0 = "default" in
+	let cfname1 = "cf1" in
+	let dbh = DB.opendb ~opts:dboptions
+	  ~cfds:[cfname0, cfoptions] path in
+	assert_equal [cfname0] (list_column_families path) ;
+	DB.create_cf dbh ~opts:cfoptions cfname1 ;
+	assert_equal (canon [cfname0; cfname1]) (canon (list_column_families path)) ;
+	let cfname = cfname1 in
+	begin
+	  assert_raises Not_found
+	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	  DB.cf_delete dbh ~cfname "foo" ;
+	  DB.cf_put dbh ~cfname "foo" "bar" ;
+	  assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
+	  DB.cf_delete dbh ~cfname "foo" ;
+	  assert_raises Not_found
+	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	end ;
+	DB.destroy dbh ;
+	let dbh = DB.opendb ~opts:dboptions
+	  ~cfds:[cfname0, cfoptions; cfname1, cfoptions] path in
+	begin
+	  assert_raises Not_found
+	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	  DB.cf_delete dbh ~cfname "foo" ;
+	  DB.cf_put dbh ~cfname "foo" "bar" ;
+	  assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
+	  DB.cf_delete dbh ~cfname "foo" ;
+	  assert_raises Not_found
+	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
+	end ;
+	DB.drop_cf dbh cfname1 ;
+	assert_equal [cfname0] (list_column_families path) ;
 	()
       ) ;
   ]
