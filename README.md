@@ -19,7 +19,7 @@ example of cppffigen in action.
 ## Installation
 
 **NOTE WELL**: This code has been buit against version
- ed8fbdb560d7e646176fc697a6ba23e1f5af183a of rocksdb.  This is a
+' ed8fbdb560d7e646176fc697a6ba23e1f5af183a` of rocksdb.  This is a
  pre-5.0 commit-revision.  I haven't checked if this code will
  compile/run against official releases (2.. 4.3.1, 4.11.2, etc) of
  Rocksdb, but if if you want to use this library, pleaes contact me
