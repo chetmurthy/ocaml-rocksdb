@@ -327,6 +327,12 @@ module DB0 = struct
 
   let iterator ?(gc=true) ?opts dbh =
     Iterator.C.create ~gc (dbh.it, opts, None)
+
+  let with_iterator ?opts dbh ~f =
+    let it = Iterator.C.create ~gc:false (dbh.it, opts, None) in
+    protect ~f:(fun () -> f it)
+      ~finally:(fun () -> Iterator.destroy it)
+
 end
 
 module DB = struct
@@ -441,4 +447,10 @@ module DB = struct
   let iterator ?(gc=true) ?opts ?cfname dbh =
     let cfname = match cfname with None -> __default_cfname | Some n -> n in
     Iterator.C.create ~gc (dbh.it.dbh, opts, Some (cfh dbh cfname))
+
+  let with_iterator ?opts ?cfname dbh ~f =
+    let cfname = match cfname with None -> __default_cfname | Some n -> n in
+    let it = Iterator.C.create ~gc:false (dbh.it.dbh, opts, Some (cfh dbh cfname)) in
+    protect ~f:(fun () -> f it)
+      ~finally:(fun () -> Iterator.destroy it)
 end

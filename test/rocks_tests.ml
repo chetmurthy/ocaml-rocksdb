@@ -125,37 +125,38 @@ let all = "all_tests" >:::
 	DBOptions.set_create_if_missing dboptions true ;
 	let cfname0 = "default" in
 	let cfname1 = "cf1" in
-	let dbh = DB.opendb ~opts:dboptions
-	  ~cfds:[cfname0, cfoptions] path in
-	assert_equal [cfname0] (list_column_families path) ;
-	DB.create_cf dbh ~opts:cfoptions cfname1 ;
-	assert_equal (canon [cfname0; cfname1]) (canon (list_column_families path)) ;
-	let cfname = cfname1 in
-	begin
-	  assert_raises Not_found
-	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
-	  DB.cf_delete dbh ~cfname "foo" ;
-	  DB.cf_put dbh ~cfname "foo" "bar" ;
-	  assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
-	  DB.cf_delete dbh ~cfname "foo" ;
-	  assert_raises Not_found
-	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
-	end ;
-	DB.destroy dbh ;
-	let dbh = DB.opendb ~opts:dboptions
-	  ~cfds:[cfname0, cfoptions; cfname1, cfoptions] path in
-	begin
-	  assert_raises Not_found
-	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
-	  DB.cf_delete dbh ~cfname "foo" ;
-	  DB.cf_put dbh ~cfname "foo" "bar" ;
-	  assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
-	  DB.cf_delete dbh ~cfname "foo" ;
-	  assert_raises Not_found
-	    (fun () -> DB.cf_get dbh ~cfname "foo") ;
-	end ;
-	DB.drop_cf dbh cfname1 ;
-	assert_equal [cfname0] (list_column_families path) ;
+	DB.with_db ~opts:dboptions ~cfds:[cfname0, cfoptions] path
+	  ~f:(fun dbh ->
+	    assert_equal [cfname0] (list_column_families path) ;
+	    DB.create_cf dbh ~opts:cfoptions cfname1 ;
+	    assert_equal (canon [cfname0; cfname1]) (canon (list_column_families path)) ;
+	    let cfname = cfname1 in
+	    begin
+	      assert_raises Not_found
+		(fun () -> DB.cf_get dbh ~cfname "foo") ;
+	      DB.cf_delete dbh ~cfname "foo" ;
+	      DB.cf_put dbh ~cfname "foo" "bar" ;
+	      assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
+	      DB.cf_delete dbh ~cfname "foo" ;
+	      assert_raises Not_found
+		(fun () -> DB.cf_get dbh ~cfname "foo") ;
+	    end) ;
+	DB.with_db ~opts:dboptions ~cfds:[cfname0, cfoptions; cfname1, cfoptions] path
+	  ~f:(fun dbh ->
+	    let cfname = cfname1 in
+	    begin
+	      assert_raises Not_found
+		(fun () -> DB.cf_get dbh ~cfname "foo") ;
+	      DB.cf_delete dbh ~cfname "foo" ;
+	      DB.cf_put dbh ~cfname "foo" "bar" ;
+	      assert_equal "bar" (DB.cf_get dbh ~cfname "foo") ;
+	      DB.cf_delete dbh ~cfname "foo" ;
+	      assert_raises Not_found
+		(fun () -> DB.cf_get dbh ~cfname "foo") ;
+	    end ;
+	    DB.drop_cf dbh cfname1 ;
+	    assert_equal [cfname0] (list_column_families path)
+	  );
 	()
       ) ;
     "iterator-0" >::
@@ -167,10 +168,11 @@ let all = "all_tests" >:::
 	let dbh = DB.opendb ~opts:dboptions
 	  ~cfds:[cfname,cfoptions]
 	  "/tmp/rocks_tests/aname-iterator-0"  in
-	let it = DB.iterator dbh in
-	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
-	Iterator.seek_to_first it ;
-	assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	DB.with_iterator dbh ~f:(fun it ->
+	  assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	  Iterator.seek_to_first it ;
+	  assert_bool "better NOT be valid (2)" (not (Iterator.valid it))
+	);
 	()
       ) ;
     "iterator-1" >::
@@ -179,7 +181,7 @@ let all = "all_tests" >:::
 	let cfoptions = CFOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
 	let cfname = "default" in
-	DB.with_db  ~opts:dboptions
+	DB.with_db ~opts:dboptions
 	  ~cfds:[cfname,cfoptions]
 	  "/tmp/rocks_tests/aname-iterator-1"
        ~f:(fun dbh ->
@@ -187,25 +189,26 @@ let all = "all_tests" >:::
 	  ["a"; "aa"; "ab";
 	   "c"; "ca"; "cb";
 	   "e"] ;
-	let it = DB.iterator dbh in
-	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
-	Iterator.seek_to_first it ;
-	assert_bool "better BE valid" (Iterator.valid it) ;
-	assert_equal "a" (Iterator.key it) ;
-	assert_equal "a" (Iterator.value it) ;
-	Iterator.seek_for_prev it "b" ;
-	assert_equal "ab" (Iterator.key it) ;
-	Iterator.seek_for_prev it "c" ;
-	assert_equal "c" (Iterator.key it) ;
-	Iterator.seek_to_last it ;
-	Iterator.next it ;
-	assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
-	let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
-	assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
-	  (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
-	assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
-	  (List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it))) ;
-	()
+	 DB.with_iterator dbh ~f:(fun it ->
+	   assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	   Iterator.seek_to_first it ;
+	   assert_bool "better BE valid" (Iterator.valid it) ;
+	   assert_equal "a" (Iterator.key it) ;
+	   assert_equal "a" (Iterator.value it) ;
+	   Iterator.seek_for_prev it "b" ;
+	   assert_equal "ab" (Iterator.key it) ;
+	   Iterator.seek_for_prev it "c" ;
+	   assert_equal "c" (Iterator.key it) ;
+	   Iterator.seek_to_last it ;
+	   Iterator.next it ;
+	   assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	   let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
+	   assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
+	     (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
+	   assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
+	     (List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it)))
+	 ) ;
+	 ()
        )
       ) ;
   ]
