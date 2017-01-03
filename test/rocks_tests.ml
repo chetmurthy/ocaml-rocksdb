@@ -177,39 +177,50 @@ let all = "all_tests" >:::
       ) ;
     "iterator-1" >::
       (fun ctxt ->
+	let path = "/tmp/rocks_tests/aname-iterator-1" in
 	let dboptions = DBOptions.create() in
 	let cfoptions = CFOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
-	let cfname = "default" in
-	DB.with_db ~opts:dboptions
-	  ~cfds:[cfname,cfoptions]
-	  "/tmp/rocks_tests/aname-iterator-1"
+	let cfname0 = "default" in
+	let cfname1 = "cf1" in
+	DB.with_db ~opts:dboptions ~cfds:[cfname0,cfoptions] path
        ~f:(fun dbh ->
-	List.iter (fun s -> DB.put dbh  s s)
+	 DB.create_cf dbh ~opts:cfoptions cfname1 ;
+	 List.iter (fun s ->
+	   DB.put dbh s s ;
+	   DB.cf_put ~cfname:cfname1 dbh s s ;
+	 )
 	  ["a"; "aa"; "ab";
 	   "c"; "ca"; "cb";
 	   "e"] ;
-	 DB.with_iterator dbh ~f:(fun it ->
-	   assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
-	   Iterator.seek_to_first it ;
-	   assert_bool "better BE valid" (Iterator.valid it) ;
-	   assert_equal "a" (Iterator.key it) ;
-	   assert_equal "a" (Iterator.value it) ;
-	   Iterator.seek_for_prev it "b" ;
-	   assert_equal "ab" (Iterator.key it) ;
-	   Iterator.seek_for_prev it "c" ;
-	   assert_equal "c" (Iterator.key it) ;
-	   Iterator.seek_to_last it ;
-	   Iterator.next it ;
-	   assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
-	   let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
-	   assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
-	     (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
-	   assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
-	     (List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it)))
-	 ) ;
 	 ()
-       )
+       ) ;
+
+	DB.with_db ~opts:dboptions ~cfds:[cfname0,cfoptions; cfname1,cfoptions] path
+	  ~f:(fun dbh ->
+	    let iter_test it =
+	      assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	      Iterator.seek_to_first it ;
+	      assert_bool "better BE valid" (Iterator.valid it) ;
+	      assert_equal "a" (Iterator.key it) ;
+	      assert_equal "a" (Iterator.value it) ;
+	      Iterator.seek_for_prev it "b" ;
+	      assert_equal "ab" (Iterator.key it) ;
+	      Iterator.seek_for_prev it "c" ;
+	      assert_equal "c" (Iterator.key it) ;
+	      Iterator.seek_to_last it ;
+	      Iterator.next it ;
+	      assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	      let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
+	      assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
+		(List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
+	      assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
+		(List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it)))
+	    in
+	    DB.with_iterator dbh ~f:iter_test ;
+	    DB.with_iterator dbh ~cfname:cfname1 ~f:iter_test ;
+	    ()
+	  )
       ) ;
   ]
   
