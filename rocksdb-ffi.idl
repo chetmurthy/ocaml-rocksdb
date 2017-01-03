@@ -408,6 +408,26 @@ std::string demarsh_state(const char *state) {
     (((ID db_id) dbh) ((ID roptions_id) opth) ((ID cfhandle_id) cfh) ((ID "std::string") key))
      "_res0 = dbh->Get(*opth, cfh, key, &_res1) ;")
 
+   (FOREIGN ((ID status))
+    rocksdb_put
+    (((ID db_id) dbh) ((ID woptions_id) opth) ((ID "std::string") key) ((ID "std::string") val))
+     "_res0 = dbh->Put(*opth, key, val) ;")
+
+   (FOREIGN ((ID status))
+    rocksdb_cf_put
+    (((ID db_id) dbh) ((ID woptions_id) opth) ((ID cfhandle_id) cfh) ((ID "std::string") key) ((ID "std::string") val))
+     "_res0 = dbh->Put(*opth, cfh, key, val) ;")
+
+   (FOREIGN ((ID status))
+    rocksdb_delete
+    (((ID db_id) dbh) ((ID woptions_id) opth) ((ID "std::string") key))
+     "_res0 = dbh->Delete(*opth, key) ;")
+
+   (FOREIGN ((ID status))
+    rocksdb_cf_delete
+    (((ID db_id) dbh) ((ID woptions_id) opth) ((ID cfhandle_id) cfh) ((ID "std::string") key))
+     "_res0 = dbh->Delete(*opth, cfh, key) ;")
+
     (STRUCT
      ((modname DBOptionsST)
       (name dboptions)

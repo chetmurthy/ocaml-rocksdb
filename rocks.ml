@@ -255,3 +255,35 @@ module DB = struct
     rocksdb_cf_get dbh.it.dbh ropts.ROptions.it cfh key
     |> status2_to_result |> error_to_failure ~msg:"rocksdb_get"
 end
+
+module Iterator = struct
+  module C = GCBox(struct
+    let name = "iterator_id"
+    type _t = iterator_id
+    type args = DB.t * ROptions.t option
+    let create_no_gc (dbh,ropts) =
+      let readoptions = match ropts with
+	| None -> ROptions.create()
+	| Some o -> o in
+      rocksdb_iterator_create dbh.DB.it.DB.dbh readoptions.ROptions.it
+    let destroy it = rocksdb_iterator_destroy it
+  end)
+  include C
+
+  let create ?(gc=true) ?opts dbh =
+    C.create ~gc (dbh, opts)
+
+  let valid it = rocksdb_iter_valid it.it
+
+  let seek_to_first it = rocksdb_iter_seek_to_first it.it
+  let seek_to_last it = rocksdb_iter_seek_to_last it.it
+  let rocksdb_iter_seek it k = rocksdb_iter_seek it.it k
+  let seek_for_prev it k = rocksdb_iter_seek_for_prev it.it k
+  let next it = rocksdb_iter_next it.it
+  let prev it = rocksdb_iter_prev it.it
+  let key it = rocksdb_iter_key it.it
+  let value it = rocksdb_iter_value it.it
+  let status it =
+    rocksdb_iter_status it.it
+    |> status_to_result
+end
