@@ -5,6 +5,8 @@ open Rocks_types
 open Ocaml_rocksdb
 open Ocaml_rocksdb.Types
 
+let __default_cfname = "default"
+
 module GCBox(T : sig
   type args
   type _t
@@ -198,6 +200,85 @@ module WriteBatch = struct
 
 end
 
+module Iterator = struct
+  module C = GCBox(struct
+    let name = "iterator_id"
+    type _t = iterator_id
+    type args = db_id * ROptions.t option * cfhandle_id option
+    let create_no_gc (dbh,ropts, cfh_opt) =
+      let readoptions = ROptions.unopt ropts in
+      match cfh_opt with
+	None ->
+	  rocksdb_iterator_create dbh readoptions.ROptions.it
+      | Some cfh ->
+	  rocksdb_iterator_cf_create dbh readoptions.ROptions.it cfh
+    let destroy it = rocksdb_iterator_destroy it
+  end)
+  include C
+
+  let valid it = rocksdb_iter_valid it.it
+
+  let seek_to_first it = rocksdb_iter_seek_to_first it.it
+  let seek_to_last it = rocksdb_iter_seek_to_last it.it
+  let seek it k = rocksdb_iter_seek it.it k
+  let seek_for_prev it k = rocksdb_iter_seek_for_prev it.it k
+  let next it = rocksdb_iter_next it.it
+  let prev it = rocksdb_iter_prev it.it
+  let key it = rocksdb_iter_key it.it
+  let value it = rocksdb_iter_value it.it
+  let status it =
+    rocksdb_iter_status it.it
+    |> status_to_result
+
+  let _forward ~from ~ok it ~f =
+    begin
+      match from with
+	None -> seek_to_first it
+      | Some k -> seek it k
+    end ;
+    if not (valid it) then () else begin
+      let rec itrec () =
+	let k = key it in
+	let v = value it in
+	if not(ok k v) then () else begin
+	  f k v ;
+	  next it ;
+	  if not (valid it) then () else itrec ()
+	end
+      in itrec ()
+    end
+
+  let forward ?from ?(ok=(fun _ _ -> true)) it ~f =
+    _forward ~from ~ok it ~f
+
+  let _reverse ~from ~ok it ~f =
+    begin
+      match from with
+	None -> seek_to_last it
+      | Some k -> seek_for_prev it k
+    end ;
+    if not (valid it) then () else begin
+      let rec itrec () =
+	let k = key it in
+	let v = value it in
+	if not(ok k v) then () else begin
+	  f k v ;
+	  prev it ;
+	  if not (valid it) then () else itrec ()
+	end
+      in itrec ()
+    end
+
+  let reverse ?from ?(ok=(fun _ _ -> true)) it ~f =
+    _reverse ~from ~ok it ~f
+
+  let to_list itplan =
+    let acc = ref [] in
+    let () = itplan ~f:(fun k v -> push acc (k,v)) in
+    List.rev !acc
+
+end
+
 module DB0 = struct
 
   let _opendb_no_gc (opts, name) =
@@ -243,6 +324,9 @@ module DB0 = struct
     let wopts = WOptions.unopt wopts in
     rocksdb_delete dbh.it wopts.WOptions.it key
     |> status_to_result |> error_to_failure ~msg:"rocksdb_delete"
+
+  let iterator ?(gc=true) ?opts dbh =
+    Iterator.C.create ~gc (dbh.it, opts, None)
 end
 
 module DB = struct
@@ -353,82 +437,8 @@ module DB = struct
     let cfh = cfh dbh cfname in
     rocksdb_cf_delete dbh.it.dbh wopts.WOptions.it cfh key
     |> status_to_result |> error_to_failure ~msg:"rocksdb_cf_delete"
-end
 
-module Iterator = struct
-  module C = GCBox(struct
-    let name = "iterator_id"
-    type _t = iterator_id
-    type args = DB.t * ROptions.t option
-    let create_no_gc (dbh,ropts) =
-      let readoptions = ROptions.unopt ropts in
-      rocksdb_iterator_create dbh.DB.it.DB.dbh readoptions.ROptions.it
-    let destroy it = rocksdb_iterator_destroy it
-  end)
-  include C
-
-  let create ?(gc=true) ?opts dbh =
-    C.create ~gc (dbh, opts)
-
-  let valid it = rocksdb_iter_valid it.it
-
-  let seek_to_first it = rocksdb_iter_seek_to_first it.it
-  let seek_to_last it = rocksdb_iter_seek_to_last it.it
-  let seek it k = rocksdb_iter_seek it.it k
-  let seek_for_prev it k = rocksdb_iter_seek_for_prev it.it k
-  let next it = rocksdb_iter_next it.it
-  let prev it = rocksdb_iter_prev it.it
-  let key it = rocksdb_iter_key it.it
-  let value it = rocksdb_iter_value it.it
-  let status it =
-    rocksdb_iter_status it.it
-    |> status_to_result
-
-  let _forward ~from ~ok it ~f =
-    begin
-      match from with
-	None -> seek_to_first it
-      | Some k -> seek it k
-    end ;
-    if not (valid it) then () else begin
-      let rec itrec () =
-	let k = key it in
-	let v = value it in
-	if not(ok k v) then () else begin
-	  f k v ;
-	  next it ;
-	  if not (valid it) then () else itrec ()
-	end
-      in itrec ()
-    end
-
-  let forward ?from ?(ok=(fun _ _ -> true)) it ~f =
-    _forward ~from ~ok it ~f
-
-  let _reverse ~from ~ok it ~f =
-    begin
-      match from with
-	None -> seek_to_last it
-      | Some k -> seek_for_prev it k
-    end ;
-    if not (valid it) then () else begin
-      let rec itrec () =
-	let k = key it in
-	let v = value it in
-	if not(ok k v) then () else begin
-	  f k v ;
-	  prev it ;
-	  if not (valid it) then () else itrec ()
-	end
-      in itrec ()
-    end
-
-  let reverse ?from ?(ok=(fun _ _ -> true)) it ~f =
-    _reverse ~from ~ok it ~f
-
-  let to_list itplan =
-    let acc = ref [] in
-    let () = itplan ~f:(fun k v -> push acc (k,v)) in
-    List.rev !acc
-
+  let iterator ?(gc=true) ?opts ?cfname dbh =
+    let cfname = match cfname with None -> __default_cfname | Some n -> n in
+    Iterator.C.create ~gc (dbh.it.dbh, opts, Some (cfh dbh cfname))
 end

@@ -16,7 +16,7 @@ let all = "all_tests" >:::
       (fun ctxt ->
 	let opts = DBOptions.create ~gc:false () in
 	DBOptions.destroy opts ;
-	assert_raises (Assert_failure("rocks.ml",23,26))
+	assert_raises (Assert_failure("rocks.ml",25,26))
 	(fun () -> DBOptions.destroy opts) ;
       ) ;
     "double-free-gc" >::
@@ -167,7 +167,7 @@ let all = "all_tests" >:::
 	let dbh = DB.opendb ~opts:dboptions
 	  ~cfds:[cfname,cfoptions]
 	  "/tmp/rocks_tests/aname-iterator-0"  in
-	let it = Iterator.create dbh in
+	let it = DB.iterator dbh in
 	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
 	Iterator.seek_to_first it ;
 	assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
@@ -187,7 +187,7 @@ let all = "all_tests" >:::
 	  ["a"; "aa"; "ab";
 	   "c"; "ca"; "cb";
 	   "e"] ;
-	let it = Iterator.create dbh in
+	let it = DB.iterator dbh in
 	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
 	Iterator.seek_to_first it ;
 	assert_bool "better BE valid" (Iterator.valid it) ;

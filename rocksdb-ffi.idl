@@ -270,11 +270,15 @@ std::string demarsh_state(const char *state) {
    (CPP2ML (ID iterator_id) "_mlvalue = c2ml_owned_pointer(_cvalue);")
    (ML2CPP (ID iterator_id) "ml2c_owned_pointer(_mlvalue, _cvaluep);")
 
-
    (FOREIGN ((ID iterator_id))
     rocksdb_iterator_create
     (((ID db_id) dbh) ((ID roptions_id) ropth))
      "_res0 = dbh->NewIterator(*ropth) ;")
+
+   (FOREIGN ((ID iterator_id))
+    rocksdb_iterator_cf_create
+    (((ID db_id) dbh) ((ID roptions_id) ropth) ((ID cfhandle_id) cfh))
+     "_res0 = dbh->NewIterator(*ropth, cfh) ;")
 
    (FOREIGN () rocksdb_iterator_destroy (((ID iterator_id) ith))
      "if (NULL != ith) {
