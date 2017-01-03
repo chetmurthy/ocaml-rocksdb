@@ -196,31 +196,39 @@ let all = "all_tests" >:::
 	 ()
        ) ;
 
+	let iter_test it =
+	  assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	  Iterator.seek_to_first it ;
+	  assert_bool "better BE valid" (Iterator.valid it) ;
+	  assert_equal "a" (Iterator.key it) ;
+	  assert_equal "a" (Iterator.value it) ;
+	  Iterator.seek_for_prev it "b" ;
+	  assert_equal "ab" (Iterator.key it) ;
+	  Iterator.seek_for_prev it "c" ;
+	  assert_equal "c" (Iterator.key it) ;
+	  Iterator.seek_to_last it ;
+	  Iterator.next it ;
+	  assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	  let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
+	  assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
+	    (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
+	  assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
+	    (List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it)))
+	in
+
 	DB.with_db ~opts:dboptions ~cfds:[cfname0,cfoptions; cfname1,cfoptions] path
 	  ~f:(fun dbh ->
-	    let iter_test it =
-	      assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
-	      Iterator.seek_to_first it ;
-	      assert_bool "better BE valid" (Iterator.valid it) ;
-	      assert_equal "a" (Iterator.key it) ;
-	      assert_equal "a" (Iterator.value it) ;
-	      Iterator.seek_for_prev it "b" ;
-	      assert_equal "ab" (Iterator.key it) ;
-	      Iterator.seek_for_prev it "c" ;
-	      assert_equal "c" (Iterator.key it) ;
-	      Iterator.seek_to_last it ;
-	      Iterator.next it ;
-	      assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
-	      let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
-	      assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
-		(List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
-	      assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
-		(List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it)))
-	    in
 	    DB.with_iterator dbh ~f:iter_test ;
 	    DB.with_iterator dbh ~cfname:cfname1 ~f:iter_test ;
 	    ()
-	  )
+	  ) ;
+
+	DB.with_db ~readonly:true ~opts:dboptions ~cfds:[cfname0,cfoptions; cfname1,cfoptions] path
+	  ~f:(fun dbh ->
+	    DB.with_iterator dbh ~f:iter_test ;
+	    DB.with_iterator dbh ~cfname:cfname1 ~f:iter_test ;
+	    ()
+	  ) ;
       ) ;
   ]
   

@@ -224,6 +224,28 @@ std::string demarsh_state(const char *state) {
 ")
 
    (FOREIGN
+    ((ID status) (ID db_id_opt))
+    rocksdb_open_for_readonly
+    (((ID options_id) opth) ((ID std::string) name) ((PRIM BOOL) error_if_log_file_exist))
+    "rocksdb::DB *out_dbptr = NULL;
+  _res0 = rocksdb::DB::OpenForReadOnly(*opth, name, &out_dbptr, error_if_log_file_exist);
+  if (!_res0.ok()) { out_dbptr = NULL ; }
+  OptWrap<rocksdb::DB> w(out_dbptr);
+  _res1 = w.p();
+")
+
+   (FOREIGN
+    ((ID status) (TYCON std::vector ((ID cfhandle_id))) (ID db_id_opt))
+    rocksdb_open_column_families_for_readonly
+    (((ID dboptions_id) opth) ((ID std::string) name) ((TYCON std::vector ((ID cfd))) cfds) ((PRIM BOOL) error_if_log_file_exist))
+    "rocksdb::DB *out_dbptr = NULL;
+  _res0 = rocksdb::DB::OpenForReadOnly(*opth, name, cfds, &_res1, &out_dbptr, error_if_log_file_exist);
+  if (!_res0.ok()) { _res1.clear() ; out_dbptr = NULL ; }
+  OptWrap<rocksdb::DB> w(out_dbptr);
+  _res2 = w.p();
+")
+
+   (FOREIGN
     ((ID status) (ID cfhandle_id))
     rocksdb_create_column_family
     (((ID db_id) dbh) ((ID cfoptions_id) opth) ((ID std::string) name))

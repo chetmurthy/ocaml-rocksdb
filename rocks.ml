@@ -288,9 +288,12 @@ end
 
 module DB0 = struct
 
-  let _opendb_no_gc (opts, name) =
+  let _opendb_no_gc (readonly, error_if_log_file_exist, opts, name) =
     let options = Options.unopt opts in
-    rocksdb_open options.it name
+    (if readonly then
+      rocksdb_open_for_readonly options.it name error_if_log_file_exist
+    else
+      rocksdb_open options.it name)
     |> status2_to_result |> error_to_failure ~msg:"rocksdb_open"
     |> none_to_failure ~msg:"rocksdb_open"
 
@@ -299,15 +302,17 @@ module DB0 = struct
   module C = GCBox(struct
     let name = "simplified db handle"
     type _t = db_id
-    type args = Options.t option * string
+    type args = bool * bool * Options.t option * string
     let create_no_gc = _opendb_no_gc
     let destroy = destroy
   end)
   include C
-  let opendb ?opts ?(gc=true) name = C.create ~gc (opts, name)
 
-  let with_db ?opts name ~f =
-    let dbh = C.create ~gc:false (opts, name) in
+  let opendb ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?(gc=true) name =
+    C.create ~gc (readonly, error_if_log_file_exist, opts, name)
+
+  let with_db ?(readonly=false) ?(error_if_log_file_exist=false) ?opts name ~f =
+    let dbh = C.create ~gc:false (readonly, error_if_log_file_exist, opts, name) in
     protect ~f:(fun () -> f dbh)
       ~finally:(fun () -> destroy dbh)
 
@@ -348,7 +353,7 @@ module DB = struct
     cfhs : (string, cfhandle_id) Hashtbl.t ;
   }
 
-  let _opendb_no_gc (opts, cfds, name) =
+  let _opendb_no_gc (readonly, error_if_log_file_exist, opts, cfds, name) =
     let options = DBOptions.unopt opts in
     let cfoptions = CFOptions.create () in
     let cfds =
@@ -360,7 +365,10 @@ module DB = struct
       end
       |>  List.map (fun n -> (n, cfoptions)) in
     let cfds = List.map (fun (n, o) -> (n, o.CFOptions.it)) cfds in
-    rocksdb_open_column_families options.it name (Array.of_list  cfds)
+    (if readonly then
+	rocksdb_open_column_families_for_readonly options.it name (Array.of_list  cfds) error_if_log_file_exist
+     else
+	rocksdb_open_column_families options.it name (Array.of_list  cfds))
     |> status3_to_result |> error_to_failure ~msg:"rocksdb_open_column_families"
     |> (function cfds, None -> failwith "rocksdb_open_column_families: OK status, but no dbh!"
       | (cfhs, Some dbh) ->
@@ -378,15 +386,16 @@ module DB = struct
   module C = GCBox(struct
     let name = "full db handle"
     type _t = dbh
-    type args = DBOptions.t option * (string * CFOptions.t) list option * string
+    type args = bool * bool * DBOptions.t option * (string * CFOptions.t) list option * string
     let create_no_gc = _opendb_no_gc
     let destroy = destroy
   end)
   include C
-  let opendb ?opts ?cfds ?(gc=true) name = C.create ~gc (opts, cfds, name)
+  let opendb ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfds ?(gc=true) name =
+    C.create ~gc (readonly, error_if_log_file_exist, opts, cfds, name)
 
-  let with_db ?opts ?cfds name ~f =
-    let dbh = C.create ~gc:false (opts, cfds, name) in
+  let with_db ?(readonly=false) ?(error_if_log_file_exist=false) ?opts ?cfds name ~f =
+    let dbh = C.create ~gc:false (readonly, error_if_log_file_exist, opts, cfds, name) in
     protect ~f:(fun () -> f dbh)
       ~finally:(fun () -> destroy dbh)
 

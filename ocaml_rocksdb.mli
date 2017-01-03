@@ -120,6 +120,16 @@ external rocksdb_open_column_families :
   (string * Types.cfoptions_id) array ->
   Rocks_types.status_t * Types.cfhandle_id array * Types.db_id option
   = "rocksdb_open_column_families"
+external rocksdb_open_for_readonly :
+  Types.options_id ->
+  string -> bool -> Rocks_types.status_t * Types.db_id option
+  = "rocksdb_open_for_readonly"
+external rocksdb_open_column_families_for_readonly :
+  Types.dboptions_id ->
+  string ->
+  (string * Types.cfoptions_id) array ->
+  bool -> Rocks_types.status_t * Types.cfhandle_id array * Types.db_id option
+  = "rocksdb_open_column_families_for_readonly"
 external rocksdb_create_column_family :
   Types.db_id ->
   Types.cfoptions_id -> string -> Rocks_types.status_t * Types.cfhandle_id

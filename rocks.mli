@@ -99,9 +99,12 @@ end
 
 module DB0 : sig
   include GCABLE
-  val create : ?gc:bool -> Options.t option * string -> t
-  val opendb : ?opts:Options.t -> ?gc:bool -> string -> t
-  val with_db : ?opts:Options.t -> string -> f:(t -> 'a) -> 'a
+  val opendb : ?readonly:bool ->
+    ?error_if_log_file_exist:bool ->
+    ?opts:Options.t -> ?gc:bool -> string -> t
+  val with_db : ?readonly:bool ->
+    ?error_if_log_file_exist:bool ->
+    ?opts:Options.t -> string -> f:(t -> 'a) -> 'a
   val write : t -> ?wopts:WOptions.t -> WriteBatch.t -> unit
   val get : t -> ?ropts:ROptions.t -> string -> string
   val put : t -> ?wopts:WOptions.t -> string -> string -> unit
@@ -112,9 +115,12 @@ end
 
 module DB : sig
   include GCABLE
-  val create : ?gc:bool -> DBOptions.t option * (string * CFOptions.t) list option * string -> t
-  val opendb : ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> ?gc:bool -> string -> t
-  val with_db : ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> string -> f:(t -> 'a) -> 'a
+  val opendb : ?readonly:bool ->
+           ?error_if_log_file_exist:bool ->
+           ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> ?gc:bool -> string -> t
+  val with_db : ?readonly:bool ->
+           ?error_if_log_file_exist:bool ->
+           ?opts:DBOptions.t -> ?cfds:(string * CFOptions.t) list -> string -> f:(t -> 'a) -> 'a
   val cfh : t -> string -> CFH.t
   val create_cf : t -> ?opts:CFOptions.t -> string -> unit
   val drop_cf : t -> string -> unit
