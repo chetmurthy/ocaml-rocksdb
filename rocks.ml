@@ -1,3 +1,5 @@
+open Core_kernel.Common
+
 open Misc
 open Rocks_types
 open Ocaml_rocksdb
@@ -216,6 +218,11 @@ module DB0 = struct
   include C
   let opendb ?opts ?(gc=true) name = C.create ~gc (opts, name)
 
+  let with_db ?opts name ~f =
+    let dbh = C.create ~gc:false (opts, name) in
+    protect ~f:(fun () -> f dbh)
+      ~finally:(fun () -> destroy dbh)
+
   let write dbh ?wopts wb =
     let wopts = WOptions.unopt wopts in
     rocksdb_write dbh.it wopts.WOptions.it wb.WriteBatch.it
@@ -280,6 +287,11 @@ module DB = struct
   end)
   include C
   let opendb ?opts ?cfds ?(gc=true) name = C.create ~gc (opts, cfds, name)
+
+  let with_db ?opts ?cfds name ~f =
+    let dbh = C.create ~gc:false (opts, cfds, name) in
+    protect ~f:(fun () -> f dbh)
+      ~finally:(fun () -> destroy dbh)
 
   let cfh dbh cfname = Hashtbl.find dbh.it.cfhs cfname
 
@@ -362,7 +374,7 @@ module Iterator = struct
 
   let seek_to_first it = rocksdb_iter_seek_to_first it.it
   let seek_to_last it = rocksdb_iter_seek_to_last it.it
-  let rocksdb_iter_seek it k = rocksdb_iter_seek it.it k
+  let seek it k = rocksdb_iter_seek it.it k
   let seek_for_prev it k = rocksdb_iter_seek_for_prev it.it k
   let next it = rocksdb_iter_next it.it
   let prev it = rocksdb_iter_prev it.it
@@ -371,4 +383,52 @@ module Iterator = struct
   let status it =
     rocksdb_iter_status it.it
     |> status_to_result
+
+  let _forward ~from ~ok it ~f =
+    begin
+      match from with
+	None -> seek_to_first it
+      | Some k -> seek it k
+    end ;
+    if not (valid it) then () else begin
+      let rec itrec () =
+	let k = key it in
+	let v = value it in
+	if not(ok k v) then () else begin
+	  f k v ;
+	  next it ;
+	  if not (valid it) then () else itrec ()
+	end
+      in itrec ()
+    end
+
+  let forward ?from ?(ok=(fun _ _ -> true)) it ~f =
+    _forward ~from ~ok it ~f
+
+  let _reverse ~from ~ok it ~f =
+    begin
+      match from with
+	None -> seek_to_last it
+      | Some k -> seek_for_prev it k
+    end ;
+    if not (valid it) then () else begin
+      let rec itrec () =
+	let k = key it in
+	let v = value it in
+	if not(ok k v) then () else begin
+	  f k v ;
+	  prev it ;
+	  if not (valid it) then () else itrec ()
+	end
+      in itrec ()
+    end
+
+  let reverse ?from ?(ok=(fun _ _ -> true)) it ~f =
+    _reverse ~from ~ok it ~f
+
+  let to_list itplan =
+    let acc = ref [] in
+    let () = itplan ~f:(fun k v -> push acc (k,v)) in
+    List.rev !acc
+
 end

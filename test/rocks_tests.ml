@@ -16,7 +16,7 @@ let all = "all_tests" >:::
       (fun ctxt ->
 	let opts = DBOptions.create ~gc:false () in
 	DBOptions.destroy opts ;
-	assert_raises (Assert_failure("rocks.ml",21,26))
+	assert_raises (Assert_failure("rocks.ml",23,26))
 	(fun () -> DBOptions.destroy opts) ;
       ) ;
     "double-free-gc" >::
@@ -157,6 +157,56 @@ let all = "all_tests" >:::
 	DB.drop_cf dbh cfname1 ;
 	assert_equal [cfname0] (list_column_families path) ;
 	()
+      ) ;
+    "iterator-0" >::
+      (fun ctxt ->
+	let dboptions = DBOptions.create() in
+	let cfoptions = CFOptions.create() in
+	DBOptions.set_create_if_missing dboptions true ;
+	let cfname = "default" in
+	let dbh = DB.opendb ~opts:dboptions
+	  ~cfds:[cfname,cfoptions]
+	  "/tmp/rocks_tests/aname-iterator-0"  in
+	let it = Iterator.create dbh in
+	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	Iterator.seek_to_first it ;
+	assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	()
+      ) ;
+    "iterator-1" >::
+      (fun ctxt ->
+	let dboptions = DBOptions.create() in
+	let cfoptions = CFOptions.create() in
+	DBOptions.set_create_if_missing dboptions true ;
+	let cfname = "default" in
+	DB.with_db  ~opts:dboptions
+	  ~cfds:[cfname,cfoptions]
+	  "/tmp/rocks_tests/aname-iterator-1"
+       ~f:(fun dbh ->
+	List.iter (fun s -> DB.put dbh  s s)
+	  ["a"; "aa"; "ab";
+	   "c"; "ca"; "cb";
+	   "e"] ;
+	let it = Iterator.create dbh in
+	assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
+	Iterator.seek_to_first it ;
+	assert_bool "better BE valid" (Iterator.valid it) ;
+	assert_equal "a" (Iterator.key it) ;
+	assert_equal "a" (Iterator.value it) ;
+	Iterator.seek_for_prev it "b" ;
+	assert_equal "ab" (Iterator.key it) ;
+	Iterator.seek_for_prev it "c" ;
+	assert_equal "c" (Iterator.key it) ;
+	Iterator.seek_to_last it ;
+	Iterator.next it ;
+	assert_bool "better NOT be valid (2)" (not (Iterator.valid it)) ;
+	let l = (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) in
+	assert_equal ~msg:"forward-1" ["a"; "aa"; "ab"]
+	  (List.map fst (Iterator.to_list (Iterator.forward ~from:"a" ~ok:(fun k v -> k <= "ab") it))) ;
+	assert_equal ~msg:"reverse-1" ["ab"; "aa"; "a"]
+	  (List.map fst (Iterator.to_list (Iterator.reverse ~from:"ab" ~ok:(fun k v -> k >= "a") it))) ;
+	()
+       )
       ) ;
   ]
   

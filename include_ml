@@ -5,6 +5,7 @@ let () =
 
 #use "topfind";;
 #require "ocaml-rocksdb";;
+#require "oUnit";;
 
 (*
 ;;; Local Variables: ***
