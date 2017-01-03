@@ -27,6 +27,7 @@ CXXFLAGS += -g -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL
 
 PACKS = result,threads,core_kernel
 
+MLI=rocks_types.mli $(RESULT).mli rocks.mli
 ML= misc.ml rocks_types.ml $(RESULT).ml rocks.ml
 CMO= $(patsubst %.ml,%.cmo, $(ML))
 CMX= $(patsubst %.ml,%.cmx, $(ML))
@@ -39,6 +40,7 @@ $(RESULT).cma $(RESULT).cmxa dll$(RESULT).so: $(OBJECTS) $(RESULT)_stubs.o
 	    ocamlmklib -verbose -o $(RESULT) $(CMO) $(CMX) $(RESULT)_stubs.o $(OCAMLMKLIB_FLAGS)
 
 $(CMO) $(CMI): $(ML)
+	ocamlfind ocamlc -thread -package $(PACKS) -c -g $(MLI)
 	ocamlfind ocamlc -thread -package $(PACKS) -c -g $(ML)
 
 $(CMX): $(ML) $(CMI)
@@ -65,6 +67,6 @@ META: META.pl
 
 clean::
 	rm -f META *.a *.cma *.cmi *.cmo *.cmx *.cmxa *.o *.so \
-		$(RESULT).ml $(RESULT).mli $(RESULT).top \
+		$(RESULT).ml $(RESULT).top \
 		$(RESULT)_stubs.c $(RESULT)_stubs.c.ORIG $(RESULT)_stubs.cc $(RESULT_PACKAGE).top \
 		rocksffi.ml rocksffi.cc rocksffi.o

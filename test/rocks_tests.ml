@@ -16,7 +16,7 @@ let all = "all_tests" >:::
       (fun ctxt ->
 	let opts = DBOptions.create ~gc:false () in
 	DBOptions.destroy opts ;
-	assert_raises (Assert_failure("rocks.ml",25,26))
+	assert_raises (Assert_failure("rocks.ml",31,26))
 	(fun () -> DBOptions.destroy opts) ;
       ) ;
     "double-free-gc" >::

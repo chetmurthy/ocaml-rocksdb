@@ -7,6 +7,12 @@ open Ocaml_rocksdb.Types
 
 let __default_cfname = "default"
 
+module type GCABLE = sig
+  type t
+  val double_frees : int ref
+  val destroy : t -> unit
+end
+
 module GCBox(T : sig
   type args
   type _t
@@ -168,10 +174,11 @@ let list_column_families ?opts name =
   |> Array.to_list
 
 module CFH = struct
-    let destroy dbh it =
-      rocksdb_cfhandle_destroy dbh it
-      |> status_to_result
-      |> error_to_assert_failure
+  type t = Ocaml_rocksdb.Types.cfhandle_id
+  let destroy dbh it =
+    rocksdb_cfhandle_destroy dbh it
+	   |> status_to_result
+	   |> error_to_assert_failure
 end
 
 module WriteBatch = struct
