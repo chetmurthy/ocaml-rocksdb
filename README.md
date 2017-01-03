@@ -21,7 +21,7 @@ example of cppffigen in action.
 **NOTE WELL**: This code has been buit against git revision
 `ed8fbdb560d7e646176fc697a6ba23e1f5af183a` of rocksdb, a pre-5.0
 commit-revision.  I haven't checked if this code will compile/run
-against official releases (2.. 4.3.1, 4.11.2, etc) of Rocksdb, but if
+against official releases (e.g. 4.3.1, 4.11.2, etc) of Rocksdb, but if
 if you want to use this library, pleaes contact me and I'll be happy
 to both check, and make any minof fixups required.
 
