@@ -21,6 +21,10 @@
    "
 open Rocks_types
 ")
+ (MLI PROLOGUE
+   "
+open Rocks_types
+")
   (TYPEDEF
   ((mltype (EXP int))
    (cpptype (ID size_t))

@@ -42,8 +42,9 @@ $(CMO) $(CMI): $(ML)
 $(CMX): $(ML) $(CMI)
 	ocamlfind ocamlopt -thread -package $(PACKS) -c $(ML)
 
-$(RESULT).ml $(RESULT)_stubs.cc: rocksdb-ffi.idl
+$(RESULT).ml $(RESULT).mli $(RESULT)_stubs.cc: rocksdb-ffi.idl
 	cppffigen --output ml < rocksdb-ffi.idl > $(RESULT).ml
+	cppffigen --output mli < rocksdb-ffi.idl > $(RESULT).mli
 	cppffigen --output cpp < rocksdb-ffi.idl > $(RESULT)_stubs.cc
 
 $(RESULT)_stubs.o: $(RESULT)_stubs.cc
@@ -63,6 +64,6 @@ META: META.pl
 
 clean::
 	rm -f META *.a *.cma *.cmi *.cmo *.cmx *.cmxa *.o *.so \
-		$(RESULT).ml $(RESULT).top \
+		$(RESULT).ml $(RESULT).mli $(RESULT).top \
 		$(RESULT)_stubs.c $(RESULT)_stubs.c.ORIG $(RESULT)_stubs.cc $(RESULT_PACKAGE).top \
 		rocksffi.ml rocksffi.cc rocksffi.o
