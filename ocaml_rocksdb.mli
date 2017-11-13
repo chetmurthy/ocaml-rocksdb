@@ -9,14 +9,14 @@ module DBOptionsST :
       max_open_files : int;
       max_file_opening_threads : int;
       max_total_wal_size : int64;
-      disableDataSync : bool;
       use_fsync : bool;
       db_log_dir : string;
       wal_dir : string;
       delete_obsolete_files_period_micros : int64;
+      max_background_jobs : int;
       base_background_compactions : int;
       max_background_compactions : int;
-      max_subcompactions : int;
+      max_subcompactions : int32;
       max_background_flushes : int;
       max_log_file_size : int;
       log_file_time_to_roll : int;
@@ -27,10 +27,10 @@ module DBOptionsST :
       _WAL_ttl_seconds : int64;
       _WAL_size_limit_MB : int64;
       manifest_preallocation_size : int;
-      allow_os_buffer : bool;
       allow_mmap_reads : bool;
       allow_mmap_writes : bool;
       use_direct_reads : bool;
+      use_direct_io_for_flush_and_compaction : bool;
       allow_fallocate : bool;
       is_fd_close_on_exec : bool;
       skip_log_error_on_recovery : bool;
@@ -47,17 +47,21 @@ module DBOptionsST :
       wal_bytes_per_sync : int64;
       enable_thread_tracking : bool;
       delayed_write_rate : int64;
+      enable_pipelined_write : bool;
       allow_concurrent_memtable_write : bool;
       enable_write_thread_adaptive_yield : bool;
       write_thread_max_yield_usec : int64;
       write_thread_slow_yield_usec : int64;
       skip_stats_update_on_db_open : bool;
-      wal_recovery_mode : int;
+      wal_recovery_mode : char;
       allow_2pc : bool;
       fail_if_options_file_error : bool;
       dump_malloc_stats : bool;
       avoid_flush_during_recovery : bool;
       avoid_flush_during_shutdown : bool;
+      allow_ingest_behind : bool;
+      concurrent_prepare : bool;
+      manual_wal_flush : bool;
     }
   end
 module Types :
@@ -76,6 +80,7 @@ module Types :
     and db_id
     and cfhandle_id
     and status = Rocks_types.status_t
+    and size_t = int
   end
 external rocksdb_cfoptions_create : unit -> Types.cfoptions_id
   = "rocksdb_cfoptions_create"

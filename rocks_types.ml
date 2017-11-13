@@ -29,11 +29,9 @@ let subcode_to_string = function
   | n -> Printf.sprintf "<Unrecognized subcode %d>" n
 
 
-type status_t = {code : int ; subcode : int ; msg : string option }
+type status_t = {code : int ; subcode : int ; msg : string }
 let format_status st =
-  Printf.sprintf "<%s, %s, %s>\n" (code_to_string st.code) (subcode_to_string st.subcode)
-    (match st.msg with None -> "<>"
-    | Some s -> Printf.sprintf "\"%s\"" (String.escaped s))
+  Printf.sprintf "<%s, %s, %s>\n" (code_to_string st.code) (subcode_to_string st.subcode) st.msg
 
 let status_to_result st =
   if 0 = st.code then Ok ()

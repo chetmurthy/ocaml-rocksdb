@@ -30,7 +30,7 @@ let all = "all_tests" >:::
       ) ;
     "list-0" >::
       (fun ctxt ->
-	assert_raises (Failure "rocksdb_list_column_families: <IOError, None, \"/tmp/CURRENT: No such file or directory\">\n")
+	assert_raises (Failure "rocksdb_list_column_families: <IOError, None, IO error: While opening a file for sequentially reading: /tmp/CURRENT: No such file or directory>\n")
 	  (fun () -> list_column_families "/tmp") ;
       ) ;
     "dboptions-attr" >::
@@ -44,14 +44,14 @@ let all = "all_tests" >:::
       ) ;
     "open-create-missing-fails" >::
       (fun ctxt ->
-	assert_raises (Failure "rocksdb_open_column_families: <IOError, None, \"/tmp/rocks_teste/aname-missing: No such file or directory\">\n")
+	assert_raises (Failure "rocksdb_open_column_families: <IOError, None, IO error: While mkdir if missing: /tmp/rocks_teste/aname-missing: No such file or directory>\n")
 	  (fun () -> DB.opendb "/tmp/rocks_teste/aname-missing")
       ) ;
     "open-create-missing-no-default-column-family" >::
       (fun ctxt ->
 	let dboptions = DBOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
-	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, \"Default column family not specified\">\n")
+	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, Invalid argument: Default column family not specified>\n")
 	(fun () -> DB.opendb ~opts:dboptions "/tmp/rocks_tests/aname-missing") ;
       ) ;
     "open-create-missing-ok-default-column-family" >::
@@ -111,7 +111,7 @@ let all = "all_tests" >:::
 	DBOptions.set_create_if_missing dboptions true ;
 	let cfname0 = "default" in
 	let cfname1 = "cf1" in
-	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, \"Column family not found: : cf1\">\n")
+	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, Invalid argument: Column family not found: : cf1>\n")
 	(fun () -> DB.opendb ~opts:dboptions
 	  ~cfds:[cfname0, cfoptions; cfname1, cfoptions]
 	  "/tmp/rocks_tests/aname-cf-0") ;

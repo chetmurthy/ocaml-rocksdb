@@ -1,12 +1,8 @@
-ROCKS_LIB=rocksdb
-ROCKS_INSTALL=/home/chet/Hack/IL-DEV/rocksdb-myrocks
-ROCKS_LIBDIR=/home/chet/Hack/IL-DEV/rocksdb-myrocks/lib
-ROCKS_VERSION=myrocks
 
-#ROCKS_VERSION ?= 4.11.2
-#ROCKS_INSTALL ?= /usr/local
-#ROCKS_LIBDIR ?= $(ROCKS_INSTALL)/lib
-#ROCKS_LIB ?= rocksdb
+ROCKS_VERSION ?= 5.8
+ROCKS_INSTALL ?= $(THRIFTROOT)
+ROCKS_LIBDIR ?= $(ROCKS_INSTALL)/lib
+ROCKS_LIB ?= rocksdb
 export ROCKS_LIB ROCKS_LIBDIR ROCKS_INSTALL
 
 ifeq ($(ROCKS_VERSION),myrocks)
@@ -23,7 +19,7 @@ OCAMLMKLIB_FLAGS= \
 RESULT=ocaml_rocksdb
 RESULT_PACKAGE=ocaml-rocksdb
 
-CXXFLAGS += -g -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=gnu++11
+CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=gnu++11 -fno-rtti
 
 PACKS = result,threads,core_kernel
 

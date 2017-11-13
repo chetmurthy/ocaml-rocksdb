@@ -10,23 +10,10 @@ BuildTools: ocamlbuild
 Plugins:     META (0.3),
   DevFiles (0.3)
 
-Executable "test3"
-  Path: .
-  CompiledObject: byte
-  BuildTools: ocamlbuild, camlp4o
-  MainIs: test3.ml
-  BuildDepends: ocaml-rocksdb,threads
-  Install: false
-  Custom: true
-
-Test "test3"
- Type: Custom (0.0.1)
- Command: $test3
-
 Executable "rocks_tests"
   Path: .
   CompiledObject: byte
-  BuildTools: ocamlbuild, camlp4o
+  BuildTools: ocamlbuild
   MainIs: rocks_tests.ml
   BuildDepends: ocaml-rocksdb,threads, oUnit
   Install: false

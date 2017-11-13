@@ -1,4 +1,4 @@
-open Core_kernel.Common
+open Core_kernel.Exn
 
 open Misc
 open Rocks_types
