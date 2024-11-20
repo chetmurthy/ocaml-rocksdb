@@ -19,7 +19,7 @@ OCAMLMKLIB_FLAGS= \
 RESULT=ocaml_rocksdb
 RESULT_PACKAGE=ocaml-rocksdb
 
-CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=gnu++11 -fno-rtti
+CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=c++17 -fno-rtti
 
 PACKS = result,threads,core_kernel
 
