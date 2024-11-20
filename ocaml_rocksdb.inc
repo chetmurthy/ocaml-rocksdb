@@ -115,7 +115,8 @@ struct dboptions_t {
   std::string wal_dir ;
   uint64_t delete_obsolete_files_period_micros ;
   int max_background_jobs ;
-  int base_background_compactions ;
+  // https://rocksdb.org/blog/2017/07/25/rocksdb-5-6-1-released.html
+	//int base_background_compactions ;
   int max_background_compactions ;
   uint32_t max_subcompactions ;
   int max_background_flushes ;
@@ -134,13 +135,16 @@ struct dboptions_t {
   bool use_direct_io_for_flush_and_compaction ;
   bool allow_fallocate ;
   bool is_fd_close_on_exec ;
-  bool skip_log_error_on_recovery ;
+  
+	//bool skip_log_error_on_recovery ;
   unsigned int stats_dump_period_sec ;
   bool advise_random_on_open ;
   size_t db_write_buffer_size ;
   /* AccessHint */
-  int access_hint_on_compaction_start ;
-  bool new_table_reader_for_compaction_inputs ;
+  // https://github.com/facebook/rocksdb/releases/tag/v9.0.0
+	//int access_hint_on_compaction_start ;
+  // https://github.com/facebook/rocksdb/releases/tag/v7.0.1
+	//bool new_table_reader_for_compaction_inputs ;
   size_t compaction_readahead_size ;
   size_t random_access_max_buffer_size ;
   size_t writable_file_max_buffer_size ;
@@ -162,7 +166,7 @@ struct dboptions_t {
   bool avoid_flush_during_recovery ;
   bool avoid_flush_during_shutdown ;
   bool allow_ingest_behind ;
-  bool concurrent_prepare ;
+  // bool concurrent_prepare ;
   bool manual_wal_flush ;
   dboptions_t() {}
   dboptions_t(const rocksdb::DBOptions &opts) : 
@@ -181,7 +185,7 @@ struct dboptions_t {
     wal_dir(opts.wal_dir) ,
     delete_obsolete_files_period_micros(opts.delete_obsolete_files_period_micros) ,
     max_background_jobs(opts.max_background_jobs) ,
-    base_background_compactions(opts.base_background_compactions) ,
+   // base_background_compactions(opts.base_background_compactions) ,
     max_background_compactions(opts.max_background_compactions) ,
     max_subcompactions(opts.max_subcompactions) ,
     max_background_flushes(opts.max_background_flushes) ,
@@ -200,13 +204,13 @@ struct dboptions_t {
     use_direct_io_for_flush_and_compaction(opts.use_direct_io_for_flush_and_compaction) ,
     allow_fallocate(opts.allow_fallocate) ,
     is_fd_close_on_exec(opts.is_fd_close_on_exec) ,
-    skip_log_error_on_recovery(opts.skip_log_error_on_recovery) ,
+   // skip_log_error_on_recovery(opts.skip_log_error_on_recovery) ,
     stats_dump_period_sec(opts.stats_dump_period_sec) ,
     advise_random_on_open(opts.advise_random_on_open) ,
     db_write_buffer_size(opts.db_write_buffer_size) ,
   /* AccessHint */
-    access_hint_on_compaction_start(opts.access_hint_on_compaction_start) ,
-    new_table_reader_for_compaction_inputs(opts.new_table_reader_for_compaction_inputs) ,
+		//access_hint_on_compaction_start(opts.access_hint_on_compaction_start) ,
+    //new_table_reader_for_compaction_inputs(opts.new_table_reader_for_compaction_inputs) ,
     compaction_readahead_size(opts.compaction_readahead_size) ,
     random_access_max_buffer_size(opts.random_access_max_buffer_size) ,
     writable_file_max_buffer_size(opts.writable_file_max_buffer_size) ,
@@ -229,7 +233,7 @@ struct dboptions_t {
     avoid_flush_during_recovery(opts.avoid_flush_during_recovery) ,
     avoid_flush_during_shutdown(opts.avoid_flush_during_shutdown) ,
     allow_ingest_behind(opts.allow_ingest_behind) ,
-    concurrent_prepare(opts.concurrent_prepare) ,
+    // concurrent_prepare(opts.concurrent_prepare) ,
     manual_wal_flush(opts.manual_wal_flush)
 {}
 } ;
