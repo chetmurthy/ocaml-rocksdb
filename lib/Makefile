@@ -58,7 +58,7 @@ OCAMLLIB := $(shell ocamlc -where)
 CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=c++17 -fno-rtti
 OCAMLMKLIB_FLAGS= \
   -Wl,-rpath=$(ROCKS_LIBDIR) -L$(ROCKS_LIBDIR) -l$(ROCKS_LIB) \
-  -lzstd -lz -lbz2 \
+  -llz4 -lsnappy -lzstd -lz -lbz2 \
   -lstdc++
 
 ffi_stubs.o: ffi_stubs.cc

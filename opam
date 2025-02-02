@@ -19,6 +19,8 @@ depends: [
   "camlp5-buildscripts" { >= "0.02" }
   "not-ocamlfind" { >= "0.10" }
   "conf-rocksdb"
+  "result"
+  "core"
   "ounit" { >= "2.2.7" & with-test}
 ]
 build: [

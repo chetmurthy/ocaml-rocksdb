@@ -6,6 +6,7 @@
 tests-*/_build
 */*.o
 */*.a
+*.so
 local-install
 */.depend.NEW
 META
