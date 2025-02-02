@@ -1,0 +1,5 @@
+
+ocaml-rocksdb Version 0.02
+-------------------
+
+* [01 Feb 2025] convert build to Makefiles

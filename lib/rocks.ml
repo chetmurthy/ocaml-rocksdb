@@ -1,9 +1,9 @@
-open Core_kernel.Exn
+open Core.Exn
 
 open Misc
 open Rocks_types
-open Ocaml_rocksdb
-open Ocaml_rocksdb.Types
+open Ffi
+open Ffi.Types
 
 let __default_cfname = "default"
 
@@ -174,7 +174,7 @@ let list_column_families ?opts name =
   |> Array.to_list
 
 module CFH = struct
-  type t = Ocaml_rocksdb.Types.cfhandle_id
+  type t = Ffi.Types.cfhandle_id
   let destroy dbh it =
     rocksdb_cfhandle_destroy dbh it
 	   |> status_to_result

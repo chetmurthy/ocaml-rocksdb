@@ -1,0 +1,104 @@
+# Makefile,v
+# Copyright (c) INRIA 2007-2017
+
+ocamlVERSION=$(shell ocamlc --version)
+camlp5VERSION=$(shell camlp5 -version)
+
+RM=rm
+
+DEBUG=-g
+NOT_OCAMLFIND=not-ocamlfind
+LAUNCH=env TOP=$(TOP) ocamlfind camlp5-buildscripts/LAUNCH --
+OCAMLFIND=ocamlfind
+JOINMETA=ocamlfind camlp5-buildscripts/join_meta
+YAWRAP=ocamlfind camlp5-buildscripts/ya-wrap-ocamlfind
+OCAMLTOPLEVEL=ocaml
+CAMLP5LIB=$(shell $(OCAMLFIND) query camlp5)
+MKCAMLP5=mkcamlp5 -verbose -I +dynlink
+MKCAMLP5OPT=mkcamlp5.opt -verbose -I +dynlink
+INCLUDES=
+OCAMLCFLAGS= $(INCLUDES)
+PRPACKAGE = camlp5.pr_o
+
+CMO = $(ML:.ml=.cmo)
+CMI = $(ML:.ml=.cmi)
+CMX = $(ML:.ml=.cmx)
+CMT = $(ML:.ml=.cmt)
+CMTI = $(MLI:.mli=.cmti)
+DEFAULT_INSTALL_FILES = $(MLI) $(wildcard *.cmt*)
+
+top: all
+
+ARCHIVE_TARGET_INSTALL_FILES= $(TARGET) $(TARGET:.cma=.cmxa) $(TARGET:.cma=.a)
+PACKED_ARCHIVE_TARGET_INSTALL_FILES= $(ARCHIVE_TARGET_INSTALL_FILES) $(TARGET:.cma=.cmi) $(TARGET:.cma=.cmx)
+FILES_TARGET_INSTALL_FILES= $(CMO) $(CMX) $(CMI) $(CMO:.cmo=.o)
+default_install:: META $(TARGET_INSTALL_FILES) $(DEFAULT_INSTALL_FILES)
+	touch META
+	mkdir -p $(DESTDIR)/lib
+	$(NOT_OCAMLFIND) reinstall-if-diff $(TARGET_PACKAGE) -destdir $(DESTDIR)/lib META $(DEFAULT_INSTALL_FILES) $(TARGET_INSTALL_FILES)
+
+default_uninstall::
+	$(NOT_OCAMLFIND) remove $(TARGET_PACKAGE) -destdir $(DESTDIR)/lib
+
+ifdef DEBUG_PREPROCESS
+.mli.cmi:
+	$(LAUNCH) $(YAWRAP) $(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),$(PRPACKAGE) $< > $*_ppo.mli
+	perl -p -i -e 's,-syntax camlp5r,-syntax camlp5o,' $*_ppo.mli
+	perl -p -i -e 's, -package pa_ppx.deriving_plugins.params , ,' $*_ppo.mli
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) $(OCAMLCFLAGS) -package $(PACKAGES) -c $*_ppo.mli
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES) -c $<
+
+.ml.cmo:
+	$(LAUNCH) $(YAWRAP) $(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),$(PRPACKAGE) $< > $*_ppo.ml
+	perl -p -i -e 's,-syntax camlp5r,-syntax camlp5o,' $*_ppo.ml
+	perl -p -i -e 's, -package pa_ppx.deriving_plugins.params , ,' $*_ppo.ml
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) $(OCAMLCFLAGS) -package $(PACKAGES) -c $*_ppo.ml
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES) -c $<
+else
+.mli.cmi:
+#	$(LAUNCH) $(YAWRAP) $(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),$(PRPACKAGE) $< > $*_ppo.mli
+#	perl -p -i -e 's,-syntax camlp5r,-syntax camlp5o,' $*_ppo.mli
+#	perl -p -i -e 's, -package pa_ppx.deriving_plugins.params , ,' $*_ppo.mli
+#	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) $(OCAMLCFLAGS) -package $(PACKAGES) -c $*_ppo.mli
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES) -c $<
+
+.ml.cmo:
+#	$(LAUNCH) $(YAWRAP) $(NOT_OCAMLFIND) preprocess $(OCAMLCFLAGS) -package $(PACKAGES),$(PRPACKAGE) $< > $*_ppo.ml
+#	perl -p -i -e 's,-syntax camlp5r,-syntax camlp5o,' $*_ppo.ml
+#	perl -p -i -e 's, -package pa_ppx.deriving_plugins.params , ,' $*_ppo.ml
+#	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) $(OCAMLCFLAGS) -package $(PACKAGES) -c $*_ppo.ml
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES) -c $<
+endif
+
+.ml.cmx:
+	$(LAUNCH) $(YAWRAP) $(OCAMLFIND) ocamlopt $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES) -c $<
+
+.ml.cmt:
+	@mkdir -p .cmt
+	$(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock -bin-annot -c $< -o .cmt/$*.cmo
+	cp .cmt/$*.cmt $*.cmt
+
+.mli.cmti:
+	@mkdir -p .cmt
+	$(OCAMLFIND) ocamlc $(DEBUG) $(OCAMLCFLAGS) -package $(PACKAGES),pa_ppx_dock -bin-annot -c $< -o .cmt/$*.cmi
+	cp .cmt/$*.cmti $*.cmti
+
+.PRECIOUS: %.asciidoc.corrected
+
+%.asciidoc.corrected: %.asciidoc
+	$(LAUNCH) ocaml-mdx test -o $@ $<
+
+%.asciidoc.TEST: %.asciidoc.corrected %.asciidoc
+	perl -p -i -e 's,.*: added to search path.*,,' $<
+	perl -p -i -e 's,.*: loaded.*,,' $<
+	diff -Bwiu $^
+
+toplevel::
+	$(LAUNCH) ocaml -nopromptcont
+
+.SUFFIXES: .cmo .cmi .ml .mll .mly .mli .cmx .cma .cmxa .cmt .cmti
+
+clean::
+	$(RM) -rf *.cm* *.o *.a *.byte *.opt *.log *.cache *.ppo *ppo.ml *ppo.mli _build/* .cmt *.odoc META mk_meta.ml mk_meta *.NEW *.corrected
+
+realclean:: clean

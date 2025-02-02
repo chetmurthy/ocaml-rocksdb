@@ -1,69 +1,43 @@
+# Makefile,v
+# Copyright (c) INRIA 2007-2017
 
-ROCKS_VERSION ?= 5.8
-ROCKS_INSTALL ?= $(THRIFTROOT)
-ROCKS_LIBDIR ?= $(ROCKS_INSTALL)/lib
-ROCKS_LIB ?= rocksdb
-export ROCKS_LIB ROCKS_LIBDIR ROCKS_INSTALL
+TOP=.
+include $(TOP)/config/Makefile.top
 
-ifeq ($(ROCKS_VERSION),myrocks)
-  UNIFDEF_ARGS = -D ROCKS_VERSION_MYROCKS
-else
-  UNIFDEF_ARGS = -U ROCKS_VERSION_MYROCKS
-endif
+WD=$(shell pwd)
+DESTDIR=
 
-OCAMLLIB := $(shell ocamlc -where)
-OCAMLMKLIB_FLAGS= \
-  -Wl,-rpath=$(ROCKS_LIBDIR) -L$(ROCKS_LIBDIR) -l$(ROCKS_LIB) \
-  -lstdc++
+SYSDIRS= lib
 
-RESULT=ocaml_rocksdb
-RESULT_PACKAGE=ocaml-rocksdb
+TESTDIRS= tests
 
-CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=c++17 -fno-rtti
+all: sys
+	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
-PACKS = result,threads,core_kernel
+test: all
+	set -e; for i in $(TESTDIRS); do cd $$i; $(MAKE) test; cd ..; done
 
-MLI=rocks_types.mli $(RESULT).mli rocks.mli
-ML= misc.ml rocks_types.ml $(RESULT).ml rocks.ml
-CMO= $(patsubst %.ml,%.cmo, $(ML))
-CMX= $(patsubst %.ml,%.cmx, $(ML))
-CMI= $(patsubst %.ml,%.cmi, $(ML))
-OBJECTS = $(CMO) $(CMX) $(CMI)
+sys: plugins
 
-all: $(RESULT).cma $(RESULT).cmxa dll$(RESULT).so
+plugins:
+	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) all; cd ..; done
 
-$(RESULT).cma $(RESULT).cmxa dll$(RESULT).so: $(OBJECTS) $(RESULT)_stubs.o
-	    ocamlmklib -verbose -o $(RESULT) $(CMO) $(CMX) $(RESULT)_stubs.o $(OCAMLMKLIB_FLAGS)
+doc: all
+	set -e; for i in $(SYSDIRS); do cd $$i; $(MAKE) doc; cd ..; done
+	rm -rf docs
+	tools/make-docs ocaml-rocksdb docs
+	make -C doc html
 
-$(CMO) $(CMI): $(ML)
-	ocamlfind ocamlc -thread -package $(PACKS) -c -g $(MLI)
-	ocamlfind ocamlc -thread -package $(PACKS) -c -g $(ML)
+install: sys
+	$(OCAMLFIND) remove ocaml_rocksdb || true
+	$(OCAMLFIND) install ocaml_rocksdb local-install/lib/ocaml_rocksdb/*
 
-$(CMX): $(ML) $(CMI)
-	ocamlfind ocamlopt -thread -package $(PACKS) -c $(ML)
-
-$(RESULT).ml $(RESULT).mli $(RESULT)_stubs.cc: rocksdb-ffi.idl
-	cppffigen --output ml < rocksdb-ffi.idl > $(RESULT).ml
-	cppffigen --output mli < rocksdb-ffi.idl > $(RESULT).mli
-	cppffigen --output cpp < rocksdb-ffi.idl > $(RESULT)_stubs.cc
-
-$(RESULT)_stubs.o: $(RESULT)_stubs.cc
-	g++ -c -fPIC ${CXXFLAGS} -DPIC -o $(RESULT)_stubs.o $(RESULT)_stubs.cc
-
-top:
-	ocamlfind ocamlmktop  -thread -package $(PACKS),$(RESULT_PACKAGE) -linkpkg -o $(RESULT_PACKAGE).top
-
-uninstall::
-	ocamlfind remove  $(RESULT_PACKAGE)
-
-install:: META
-	ocamlfind install  $(RESULT_PACKAGE) META $(CMI) $(RESULT).cma $(RESULT).cmxa $(RESULT).a lib$(RESULT).a dll$(RESULT).so
-
-META: META.pl
-	./META.pl > META
+uninstall:
+	$(OCAMLFIND) remove ocaml_rocksdb || true
 
 clean::
-	rm -f META *.a *.cma *.cmi *.cmo *.cmx *.cmxa *.o *.so \
-		$(RESULT).ml $(RESULT).mli $(RESULT).top \
-		$(RESULT)_stubs.c $(RESULT)_stubs.c.ORIG $(RESULT)_stubs.cc $(RESULT_PACKAGE).top \
-		rocksffi.ml rocksffi.cc rocksffi.o
+	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) clean; cd ..; done
+	rm -rf docs local-install
+
+depend:
+	set -e; for i in $(SYSDIRS) $(TESTDIRS); do cd $$i; $(MAKE) depend; cd ..; done

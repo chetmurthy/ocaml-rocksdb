@@ -20,25 +20,25 @@ module DBOptions : sig
   val unopt : t option -> t
   val set_create_if_missing : t -> bool -> unit
   val get_create_if_missing : t -> bool
-  val export : t -> Ocaml_rocksdb.DBOptionsST.t
+  val export : t -> Ffi.DBOptionsST.t
 end
 
 module Cmp : sig
   type _cmpty = Bytewise | Myrocks
   type cmpty = bool * _cmpty
-  val bytewise : Ocaml_rocksdb.Types.comparator_id
-  val rev_bytewise : Ocaml_rocksdb.Types.comparator_id
-  val myrocks : Ocaml_rocksdb.Types.comparator_id
-  val rev_myrocks : Ocaml_rocksdb.Types.comparator_id
-  val create : bool * _cmpty -> Ocaml_rocksdb.Types.comparator_id
+  val bytewise : Ffi.Types.comparator_id
+  val rev_bytewise : Ffi.Types.comparator_id
+  val myrocks : Ffi.Types.comparator_id
+  val rev_myrocks : Ffi.Types.comparator_id
+  val create : bool * _cmpty -> Ffi.Types.comparator_id
 end
 
 module CFOptions : sig
   include GCABLE
   val default : t
   val unopt : t option -> t
-  val set_comparator : t -> Ocaml_rocksdb.Types.comparator_id -> unit
-  val create : ?cmp:Ocaml_rocksdb.Types.comparator_id -> ?gc:bool -> unit -> t
+  val set_comparator : t -> Ffi.Types.comparator_id -> unit
+  val create : ?cmp:Ffi.Types.comparator_id -> ?gc:bool -> unit -> t
 end
 
 module ROptions : sig
@@ -59,7 +59,7 @@ val list_column_families : ?opts:DBOptions.t -> string -> string list
 
 module CFH : sig
   type t
-  val destroy : Ocaml_rocksdb.Types.db_id -> t -> unit
+  val destroy : Ffi.Types.db_id -> t -> unit
 end
 
 module WriteBatch : sig
@@ -81,7 +81,7 @@ end
 
 module Iterator : sig
   include GCABLE
-  val create : ?gc:bool -> Ocaml_rocksdb.Types.db_id * ROptions.t option * CFH.t option -> t
+  val create : ?gc:bool -> Ffi.Types.db_id * ROptions.t option * CFH.t option -> t
   val valid : t -> bool
   val seek_to_first : t -> unit
   val seek_to_last : t -> unit

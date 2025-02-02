@@ -1,9 +1,9 @@
 (* Copyright 2016 Chetan Murthy *)
 
 open OUnit2
-open Rocks
+open Ocaml_rocksdb.Rocks
 
-let canon l = List.sort Pervasives.compare l
+let canon l = List.sort Stdlib.compare l
 
 let all = "all_tests" >:::
   [

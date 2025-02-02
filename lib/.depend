@@ -1,0 +1,28 @@
+misc.cmo rocks_types.cmo ffi.cmo rocks.cmo misc.cmi rocks_types.cmi ffi.cmi rocks.cmi misc.cmx rocks_types.cmx ffi.cmx rocks.cmx: 
+misc.cmo :
+misc.cmx :
+rocks_types.cmo : \
+    rocks_types.cmi
+rocks_types.cmx : \
+    rocks_types.cmi
+ffi.cmo : \
+    rocks_types.cmi \
+    ffi.cmi
+ffi.cmx : \
+    rocks_types.cmx \
+    ffi.cmi
+rocks.cmo : \
+    rocks_types.cmi \
+    misc.cmo \
+    ffi.cmi \
+    rocks.cmi
+rocks.cmx : \
+    rocks_types.cmx \
+    misc.cmx \
+    ffi.cmx \
+    rocks.cmi
+rocks_types.cmi :
+ffi.cmi : \
+    rocks_types.cmi
+rocks.cmi : \
+    ffi.cmi
