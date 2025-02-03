@@ -18,6 +18,7 @@ depends: [
   "ocaml"       { >= "4.10.0" }
   "camlp5-buildscripts" { >= "0.02" }
   "not-ocamlfind" { >= "0.10" }
+  "cppffigen"
   "conf-rocksdb"
   "result"
   "core"
