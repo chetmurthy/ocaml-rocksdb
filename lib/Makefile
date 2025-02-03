@@ -49,8 +49,9 @@ ffi.ml ffi.mli ffi_stubs.cc: rocksdb-ffi.idl
 	$(CPPFFIGEN) --output cpp < rocksdb-ffi.idl > ffi_stubs.cc
 
 OCAMLLIB := $(shell ocamlc -where)
-ROCKSDB_CFLAGS = $(shellpkgconf --cflags rocksdb)
+ROCKSDB_CFLAGS = $(shell pkgconf --cflags rocksdb)
 ROCKSDB_LDFLAGS = \
+  -Wl,-rpath=$(shell pkgconf --variable=libdir) \
   $(shell pkgconf --libs rocksdb) \
   $(shell pkgconf --libs snappy) \
   $(shell pkgconf --libs libzstd) \
