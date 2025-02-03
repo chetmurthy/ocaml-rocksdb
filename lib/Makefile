@@ -51,13 +51,17 @@ ffi.ml ffi.mli ffi_stubs.cc: rocksdb-ffi.idl
 OCAMLLIB := $(shell ocamlc -where)
 ROCKSDB_CFLAGS = $(shell pkgconf --cflags rocksdb)
 ROCKSDB_LDFLAGS = \
-  -Wl,-rpath=$(shell pkgconf --variable=libdir) \
   $(shell pkgconf --libs rocksdb) \
   $(shell pkgconf --libs snappy) \
   $(shell pkgconf --libs libzstd) \
   $(shell pkgconf --libs zlib) \
   $(shell pkgconf --libs liblz4) \
   -lbz2
+
+ROCKSDB_LDFLAGS:= \
+  -Wl,-rpath=$(shell pkgconf --variable=libdir) \
+  $(ROCKSDB_LDFLAGS)
+
 CPPFFIGEN_INCLUDES = $(shell ocamlfind query cppffigen)
 CXXFLAGS += -g2 -I. -I$(CPPFFIGEN_INCLUDES) -I$(OCAMLLIB) -std=c++17 -fno-rtti $(ROCKSDB_CFLAGS)
 OCAMLMKLIB_FLAGS= $(ROCKSDB_LDFLAGS) -lstdc++
