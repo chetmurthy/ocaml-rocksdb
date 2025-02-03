@@ -1,5 +1,8 @@
 
 ocaml-rocksdb Version 0.02
--------------------
+--------------------------
 
-* [01 Feb 2025] convert build to Makefiles
+* [01 Feb 2025] 
+  * convert build to Makefiles
+  * and get it working with both ubuntu-provided, as well as manually-built RocksDB
+  * and also both shared-lib and static-lib
