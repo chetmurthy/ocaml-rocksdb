@@ -19,7 +19,7 @@ CPPFFIGEN=$(OCAMLFIND) cppffigen/cppffigen
 OCAMLCFLAGS := $(OCAMLCFLAGS) -for-pack Ocaml_rocksdb -linkall -thread
 
 all: $(TARGET) $(TARGET:.cma=.cmxa)
-	$(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
+	OCAMLFIND_LDCONF=ignore $(MAKE) DESTDIR=$(WD)/$(TOP)/local-install/ install
 
 doc: $(CMT) $(CMTI)
 
