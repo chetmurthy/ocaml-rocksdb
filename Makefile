@@ -1,6 +1,8 @@
 # Makefile,v
 # Copyright (c) INRIA 2007-2017
 
+#export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v8.11.4-shared/lib/pkgconfig/
+
 TOP=.
 include $(TOP)/config/Makefile.top
 

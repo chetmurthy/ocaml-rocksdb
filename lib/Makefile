@@ -48,18 +48,18 @@ ffi.ml ffi.mli ffi_stubs.cc: rocksdb-ffi.idl
 	$(CPPFFIGEN) --output mli < rocksdb-ffi.idl > ffi.mli
 	$(CPPFFIGEN) --output cpp < rocksdb-ffi.idl > ffi_stubs.cc
 
-ROCKS_VERSION ?= 9.8.4
-ROCKS_INSTALL ?= /home/chet/Hack/Rocksdb/v$(ROCKS_VERSION)-shared
-ROCKS_LIBDIR ?= $(ROCKS_INSTALL)/lib
-ROCKS_LIB ?= rocksdb
-export ROCKS_LIB ROCKS_LIBDIR ROCKS_INSTALL
-
 OCAMLLIB := $(shell ocamlc -where)
-CXXFLAGS += -g2 -I. -I`ocamlfind query cppffigen` -I$(OCAMLLIB) -I$(ROCKS_INSTALL)/include -std=c++17 -fno-rtti
-OCAMLMKLIB_FLAGS= \
-  -Wl,-rpath=$(ROCKS_LIBDIR) -L$(ROCKS_LIBDIR) -l$(ROCKS_LIB) \
-  -llz4 -lsnappy -lzstd -lz -lbz2 \
-  -lstdc++
+ROCKSDB_CFLAGS = $(shellpkgconf --cflags rocksdb)
+ROCKSDB_LDFLAGS = \
+  $(shell pkgconf --libs rocksdb) \
+  $(shell pkgconf --libs snappy) \
+  $(shell pkgconf --libs libzstd) \
+  $(shell pkgconf --libs zlib) \
+  $(shell pkgconf --libs liblz4) \
+  -lbz2
+CPPFFIGEN_INCLUDES = $(shell ocamlfind query cppffigen)
+CXXFLAGS += -g2 -I. -I$(CPPFFIGEN_INCLUDES) -I$(OCAMLLIB) -std=c++17 -fno-rtti $(ROCKSDB_CFLAGS)
+OCAMLMKLIB_FLAGS= $(ROCKSDB_LDFLAGS) -lstdc++
 
 ffi_stubs.o: ffi_stubs.cc
 	g++ -c -fPIC ${CXXFLAGS} -DPIC -o ffi_stubs.o ffi_stubs.cc
