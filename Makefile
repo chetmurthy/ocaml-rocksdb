@@ -3,6 +3,7 @@
 
 ifdef BACKLEVEL_ROCKSDB
 export PKG_CONFIG_PATH=$(shell pwd)/backlevel-rocksdb-pkgconfig:
+$(info PKG_CONFIG_PATH is $(shell pwd)/backlevel-rocksdb-pkgconfig: )
 endif
 #export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v5.17.2-shared/lib/pkgconfig/
 #export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v6.11.4-shared/lib/pkgconfig/
