@@ -28,6 +28,12 @@ depends: [
   "core"
   "ounit" { >= "2.2.7" & with-test}
 ]
+available: [
+  !(os-distribution = "debian" & os-version = 11) &
+  !(os-distribution = "debian" & os-version = 12) &
+  !(os-distribution = "ubuntu" & os-version = "20.04") &
+  !(os-distribution = "ubuntu" & os-version = "22.04")
+]
 build: [
   [make "sys"]
   [make "test"] {with-test}
