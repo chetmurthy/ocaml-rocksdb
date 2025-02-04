@@ -24,7 +24,7 @@ depends: [
   "conf-zlib"
   "conf-liblz4"
   "conf-libbz2"
-  "conf-rocksdb-ge-8-0-0"
+  "conf-rocksdb-ge-5-17-2"
   "result"
   "core"
   "ounit" { >= "2.2.7" & with-test}
