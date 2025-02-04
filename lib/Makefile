@@ -49,17 +49,17 @@ ffi.ml ffi.mli ffi_stubs.cc: rocksdb-ffi.idl
 	$(CPPFFIGEN) --output cpp < rocksdb-ffi.idl > ffi_stubs.cc
 
 OCAMLLIB := $(shell ocamlc -where)
-ROCKSDB_CFLAGS = $(shell pkgconf --cflags rocksdb)
+ROCKSDB_CFLAGS = $(shell pkg-config --cflags rocksdb)
 ROCKSDB_LDFLAGS = \
-  $(shell pkgconf --libs rocksdb) \
-  $(shell pkgconf --libs snappy) \
-  $(shell pkgconf --libs libzstd) \
-  $(shell pkgconf --libs zlib) \
-  $(shell pkgconf --libs liblz4) \
+  $(shell pkg-config --libs rocksdb) \
+  $(shell pkg-config --libs snappy) \
+  $(shell pkg-config --libs libzstd) \
+  $(shell pkg-config --libs zlib) \
+  $(shell pkg-config --libs liblz4) \
   -lbz2
 
 ROCKSDB_LDFLAGS:= \
-  -Wl,-rpath=$(shell pkgconf --variable=libdir) \
+  -Wl,-rpath=$(shell pkg-config --variable=libdir) \
   $(ROCKSDB_LDFLAGS)
 
 CPPFFIGEN_INCLUDES = $(shell ocamlfind query cppffigen)
