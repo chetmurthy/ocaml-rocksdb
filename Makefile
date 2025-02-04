@@ -1,6 +1,12 @@
 # Makefile,v
 # Copyright (c) INRIA 2007-2017
 
+ifdef BACKLEVEL_ROCKSDB
+export PKG_CONFIG_PATH=$(shell pwd)/backlevel-rocksdb-pkgconfig:
+endif
+#export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v5.17.2-shared/lib/pkgconfig/
+#export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v6.11.4-shared/lib/pkgconfig/
+#export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v7.8.3-shared/lib/pkgconfig/
 #export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v8.9.1-shared/lib/pkgconfig/
 #export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v9.8.4-shared/lib/pkgconfig/
 #export PKG_CONFIG_PATH=$(HOME)/Hack/Rocksdb/v9.8.4-static/lib/pkgconfig/
