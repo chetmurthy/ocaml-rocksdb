@@ -30,8 +30,9 @@ depends: [
   "ounit" { >= "2.2.7" & with-test}
 ]
 build: [
-  ["BACKLEVEL_ROCKSDB=1" { (os-distribution = "debian" & (os-version = 11 | os-version = 12)) }
-   make "sys"]
+  [make
+   "BACKLEVEL_ROCKSDB=1" { (os-distribution = "debian" & (os-version = 11 | os-version = 12)) }
+   "sys"]
   [make "test"] {with-test}
 ]
 install: [make "install"]
