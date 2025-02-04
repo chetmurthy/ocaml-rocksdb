@@ -19,6 +19,10 @@ depends: [
   "camlp5-buildscripts" { >= "0.02" }
   "not-ocamlfind" { >= "0.10" }
   "cppffigen"
+  "conf-snappy"
+  "conf-zlib"
+  "conf-lz4"
+  "conf-libbz2"
   "conf-rocksdb"
   "result"
   "core"
