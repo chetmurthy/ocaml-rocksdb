@@ -33,7 +33,9 @@ build: [
   [make
    "BACKLEVEL_ROCKSDB=1" { (os-distribution = "debian" & (os-version = 11 | os-version = 12)) }
    "sys"]
-  [make "test"] {with-test}
+  [make
+   "BACKLEVEL_ROCKSDB=1" { (os-distribution = "debian" & (os-version = 11 | os-version = 12)) }
+   "test"] {with-test}
 ]
 install: [make "install"]
 url {
