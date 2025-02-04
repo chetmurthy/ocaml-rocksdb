@@ -59,7 +59,7 @@ ROCKSDB_LDFLAGS = \
   -lbz2
 
 ROCKSDB_LDFLAGS:= \
-  -Wl,-rpath=$(shell pkg-config --variable=libdir) \
+  -Wl,-rpath=$(shell pkg-config --variable=libdir rocksdb) \
   $(ROCKSDB_LDFLAGS)
 
 CPPFFIGEN_INCLUDES = $(shell ocamlfind query cppffigen)
