@@ -19,20 +19,15 @@ depends: [
   "camlp5-buildscripts" { >= "0.02" }
   "not-ocamlfind" { >= "0.10" }
   "cppffigen"
+  "conf-g++"
   "conf-snappy"
   "conf-zlib"
-  "conf-lz4"
+  "conf-liblz4"
   "conf-libbz2"
-  "conf-rocksdb"
+  "conf-rocksdb-ge-8-0-0"
   "result"
   "core"
   "ounit" { >= "2.2.7" & with-test}
-]
-available: [
-  !(os-distribution = "debian" & os-version = 11) &
-  !(os-distribution = "debian" & os-version = 12) &
-  !(os-distribution = "ubuntu" & os-version = "20.04") &
-  !(os-distribution = "ubuntu" & os-version = "22.04")
 ]
 build: [
   [make "sys"]

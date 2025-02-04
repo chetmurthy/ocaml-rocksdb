@@ -3,6 +3,51 @@
 open OUnit2
 open Ocaml_rocksdb.Rocks
 
+let raises f =
+  try
+    let _ = f () in None
+  with e ->
+    Some e
+
+let assert_raises_exn_pred ?msg ?exnmsg exnpred (f: unit -> 'a) =
+  let pexn =
+    Printexc.to_string
+  in
+  let get_error_string () =
+    let str =
+      Format.sprintf
+        "expected exception %s, but no exception was raised."
+        (match exnmsg with None -> "<no message provided>" | Some msg -> msg)
+    in
+      match msg with
+          None ->
+            assert_failure str
+
+        | Some s ->
+            assert_failure (s^"\n"^str)
+  in
+    match raises f with
+       None ->
+          assert_failure (get_error_string ())
+
+      | Some e ->
+          let msg = match msg with None -> "" | Some s -> s in
+          assert_bool msg (exnpred e)
+
+let matches ~pattern text =
+  match Str.search_forward (Str.regexp pattern) text 0 with
+    _ -> true
+  | exception Not_found -> false
+
+
+let assert_raises_exn_pattern pattern f =
+  assert_raises_exn_pred
+    (function
+           Failure msg when matches ~pattern msg -> true
+         | _ -> false
+    )
+    f
+
 let canon l = List.sort Stdlib.compare l
 
 let all = "all_tests" >:::
@@ -30,8 +75,8 @@ let all = "all_tests" >:::
       ) ;
     "list-0" >::
       (fun ctxt ->
-	assert_raises (Failure "rocksdb_list_column_families: <IOError, <Unrecognized subcode 9>, IO error: No such file or directory: While opening a file for sequentially reading: /tmp/CURRENT: No such file or directory>\n")
-	  (fun () -> list_column_families "/tmp") ;
+	assert_raises_exn_pattern "IOError.*_build/CURRENT"
+	  (fun () -> list_column_families "_build") ;
       ) ;
     "dboptions-attr" >::
       (fun ctxt ->
@@ -44,15 +89,15 @@ let all = "all_tests" >:::
       ) ;
     "open-create-missing-fails" >::
       (fun ctxt ->
-	assert_raises (Failure "rocksdb_open_column_families: <IOError, <Unrecognized subcode 9>, IO error: No such file or directory: While mkdir if missing: /tmp/rocks_teste/aname-missing: No such file or directory>\n")
-	  (fun () -> DB.opendb "/tmp/rocks_teste/aname-missing")
+	assert_raises_exn_pattern "IOError.*No such file or directory"
+	  (fun () -> DB.opendb "_build/rocks_teste/aname-missing")
       ) ;
     "open-create-missing-no-default-column-family" >::
       (fun ctxt ->
 	let dboptions = DBOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
 	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, Invalid argument: Default column family not specified>\n")
-	(fun () -> DB.opendb ~opts:dboptions "/tmp/rocks_tests/aname-missing") ;
+	(fun () -> DB.opendb ~opts:dboptions "_build/rocks_tests/aname-missing") ;
       ) ;
     "open-create-missing-ok-default-column-family" >::
       (fun ctxt ->
@@ -60,21 +105,21 @@ let all = "all_tests" >:::
 	DBOptions.set_create_if_missing dboptions true ;
 	let dbh = DB.opendb ~opts:dboptions
 	  ~cfds:["default", CFOptions.create()]
-	  "/tmp/rocks_tests/aname-missing-ok-default-column-family" in
+	  "_build/rocks_tests/aname-missing-ok-default-column-family" in
 	()
       ) ;
     "open-create-missing-ok-simple" >::
       (fun ctxt ->
 	let options = Options.create() in
 	Options.set_create_if_missing options true ;
-	let dbh = DB0.opendb ~opts:options "/tmp/rocks_tests/aname-missing-ok-simple" in
+	let dbh = DB0.opendb ~opts:options "_build/rocks_tests/aname-missing-ok-simple" in
 	()
       ) ;
     "insert-get-0" >::
       (fun ctxt ->
 	let options = Options.create() in
 	Options.set_create_if_missing options true ;
-	let dbh = DB0.opendb ~opts:options "/tmp/rocks_tests/aname-insert-get-0"  in
+	let dbh = DB0.opendb ~opts:options "_build/rocks_tests/aname-insert-get-0"  in
 	assert_raises Not_found
 	  (fun () -> DB0.get dbh "foo") ;
 	DB0.delete dbh "foo" ;
@@ -93,7 +138,7 @@ let all = "all_tests" >:::
 	let cfname = "default" in
 	let dbh = DB.opendb ~opts:dboptions
 	  ~cfds:[cfname,cfoptions]
-	  "/tmp/rocks_tests/aname-insert-get-1"  in
+	  "_build/rocks_tests/aname-insert-get-1"  in
 	assert_raises Not_found
 	  (fun () -> DB.cf_get dbh ~cfname "foo") ;
 	DB.cf_delete dbh ~cfname "foo" ;
@@ -111,15 +156,15 @@ let all = "all_tests" >:::
 	DBOptions.set_create_if_missing dboptions true ;
 	let cfname0 = "default" in
 	let cfname1 = "cf1" in
-	assert_raises (Failure "rocksdb_open_column_families: <InvalidArgument, None, Invalid argument: Column family not found: cf1>\n")
+	assert_raises_exn_pattern "InvalidArgument.*cf1"
 	(fun () -> DB.opendb ~opts:dboptions
 	  ~cfds:[cfname0, cfoptions; cfname1, cfoptions]
-	  "/tmp/rocks_tests/aname-cf-0") ;
+	  "_build/rocks_tests/aname-cf-0") ;
 	()
       ) ;
     "cf-1" >::
       (fun ctxt ->
-	let path = "/tmp/rocks_tests/aname-cf-1" in
+	let path = "_build/rocks_tests/aname-cf-1" in
 	let dboptions = DBOptions.create() in
 	let cfoptions = CFOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
@@ -167,7 +212,7 @@ let all = "all_tests" >:::
 	let cfname = "default" in
 	let dbh = DB.opendb ~opts:dboptions
 	  ~cfds:[cfname,cfoptions]
-	  "/tmp/rocks_tests/aname-iterator-0"  in
+	  "_build/rocks_tests/aname-iterator-0"  in
 	DB.with_iterator dbh ~f:(fun it ->
 	  assert_bool "better NOT be valid" (not (Iterator.valid it)) ;
 	  Iterator.seek_to_first it ;
@@ -177,7 +222,7 @@ let all = "all_tests" >:::
       ) ;
     "iterator-1" >::
       (fun ctxt ->
-	let path = "/tmp/rocks_tests/aname-iterator-1" in
+	let path = "_build/rocks_tests/aname-iterator-1" in
 	let dboptions = DBOptions.create() in
 	let cfoptions = CFOptions.create() in
 	DBOptions.set_create_if_missing dboptions true ;
@@ -234,7 +279,7 @@ let all = "all_tests" >:::
   
 (* Run the tests in test suite *)
 let _ = 
-  if Sys.file_exists "/tmp/rocks_tests" then ignore(Unix.system "rm -rf /tmp/rocks_tests") ;
-  Unix.system "mkdir -p /tmp/rocks_tests" ;
+  if Sys.file_exists "_build/rocks_tests" then ignore(Unix.system "rm -rf _build/rocks_tests") ;
+  Unix.system "mkdir -p _build/rocks_tests" ;
   run_test_tt_main all
 ;;

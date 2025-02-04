@@ -7,7 +7,7 @@ include $(TOP)/config/Makefile.sub
 
 DESTDIR=
 
-PACKAGES := $(PACKAGES),ocaml_rocksdb,oUnit
+PACKAGES := $(PACKAGES),ocaml_rocksdb,oUnit,str
 
 ALLSRC=$(shell ls *.ml)
 ALLPACKAGES=$(PACKAGES)
@@ -36,4 +36,4 @@ rocks_tests.opt: rocks_tests.cmx
 	-linkpkg -thread $^ -o $@
 
 clean::
-	rm -f  *.ppo.*
+	rm -rf  *.ppo.* _build
