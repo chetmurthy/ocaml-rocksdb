@@ -32,7 +32,7 @@ install:: META $(TARGET_INSTALL_FILES) $(DEFAULT_INSTALL_FILES)
 
 clean::
 	$(OCAMLFIND) remove $(TARGET_PACKAGE) -destdir $(WD)/$(TOP)/local-install/lib
-	rm -rf META dll$(TARGET_PACKAGE).so lib$(TARGET_PACKAGE).a
+	rm -rf META dll$(TARGET_PACKAGE).so lib$(TARGET_PACKAGE).a ffi.ml* ffi_stubs.cc
 
 $(TARGET_PACKAGE).cmo $(TARGET_PACKAGE).cmi: $(CMO)
 	$(OCAMLFIND) ocamlc $(DEBUG) -pack -o $(TARGET_PACKAGE).cmo $^

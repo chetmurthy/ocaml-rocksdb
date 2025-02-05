@@ -15,21 +15,28 @@ ALLPACKAGES=$(PACKAGES)
 OCAMLCFLAGS := $(OCAMLCFLAGS) -thread
 
 TESTS= \
-	rocks_tests.byte \
+	rocks_tests.byte.TEST \
+	rocks_tests.noncustom.byte.TEST \
+	rocks_tests.opt.TEST \
 
 ML=\
 	rocks_tests.ml
 
-all: $(TESTS) $(TESTS:.byte=.opt)
+all: $(TESTS:.TEST=)
 
-test: $(TESTS:.byte=)
+test: $(TESTS)
 
-% : %.opt
+%.TEST : %
 	mkdir -p _build && ./$<
 
 rocks_tests.byte: rocks_tests.cmo
 	$(LAUNCH) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES) \
 	-linkpkg -custom -thread $^ -o $@
+
+rocks_tests.noncustom.byte: rocks_tests.cmo
+	$(LAUNCH) $(OCAMLFIND) ocamlc $(DEBUG) $(WARNERR) -package $(PACKAGES) \
+	-dllpath $(TOP)/local-install/lib/ocaml_rocksdb \
+	-linkpkg -thread $^ -o $@
 
 rocks_tests.opt: rocks_tests.cmx
 	$(LAUNCH) $(OCAMLFIND) ocamlopt $(DEBUG) $(WARNERR) -package $(PACKAGES) \

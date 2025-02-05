@@ -26,7 +26,7 @@ open Rocks_types
 open Rocks_types
 ")
   (TYPEDEF
-  ((mltype (EXP int))
+  ((mltype (EXP int64))
    (cpptype (ID size_t))
    (name size_t)))
 
@@ -505,7 +505,7 @@ std::string demarsh_state(const char *state) {
 	((PRIM UINT64) delete_obsolete_files_period_micros)
 	((PRIM INT) max_background_jobs)
 	((PRIM INT) max_background_compactions)
-	((PRIM UINT32) max_subcompactions)
+	((PRIM UINT) max_subcompactions)
 	((PRIM INT) max_background_flushes)
 	((ID size_t) max_log_file_size)
 	((ID size_t) log_file_time_to_roll)
